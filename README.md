@@ -1,12 +1,15 @@
-# OpenK8Deploy - Openshift/K8 templating engine
-Super simple python templating engine for openshift/k8 yml files.
+# Openshift/K8 templating and deployment engine
+Super simple python templating and deployment engine for openshift/k8 yml files.
 Detects changes made and only applies the required objects.
 
 ## Use case
-This templating engine was born in the need to a very simple templating system
-which can track changes (similar to terraform). 
-The code should be mostly commented, although I didn't bother implementing proper logging and other utils stuff.
+This tool was born in the need to a very simple templating system
+which can track changes (similar to terraform). It was build for my requirements but should
+fit others as well.
 
+## Requirements
+- Python 3.8 or later
+- `oc` (or `kubectl`) binary in path
 
 ## Usage
 ### Deploy all changes
@@ -27,7 +30,7 @@ python deploy.py reload prometheus
 
 ## Configuration
 In OK8Deploy you define apps, each app can contain multiple yml files.
-Additionally, there is a project configuration which defines the OC project which should be used.
+Additionally, there is a project configuration which describes the OC project.
 
 All yml files will be pre-processed before they will be imported.
 This includes replacing any known `${KEY}` variables with their associate values.
@@ -142,3 +145,8 @@ vars:
 dc:
   name: my-app
 ```
+
+
+
+## Contribute
+The code should be mostly commented, although I didn't bother implementing proper logging and other utils stuff.
