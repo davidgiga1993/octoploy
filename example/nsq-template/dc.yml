@@ -1,0 +1,49 @@
+# nsq deamon, sidecar container
+kind: DeploymentConfig
+apiVersion: v1
+spec:
+  template:
+    spec:
+      containers:
+        - name: "nsqd"
+          image: "nsqio/nsq"
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "10Mi"
+            limits:
+              memory: "150Mi"
+
+          command:
+            - '/nsqd'
+          args:
+            - '--lookupd-tcp-address=nsqlookupd:4160'
+            - '--data-path=/data/${DC_NAME}'
+            - '--broadcast-address=${DC_NAME}-nsq'
+
+          volumeMounts:
+            - mountPath: "/data/${DC_NAME}"
+              name: nsq-data
+      volumes:
+        - name: nsq-data
+          persistentVolumeClaim:
+            claimName: pvc-nsq-data
+
+# Default port: tcp 4150, http 4151
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: "${DC_NAME}-nsq"
+spec:
+  selector:
+    deploymentconfig: "${DC_NAME}"
+  ports:
+    - name: tcp
+      protocol: TCP
+      port: 4150
+    - name: http
+      protocol: TCP
+      port: 4151
+  type: ClusterIP

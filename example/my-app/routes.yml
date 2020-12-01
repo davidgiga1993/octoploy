@@ -1,0 +1,17 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  annotations:
+    haproxy.router.openshift.io/timeout: 10m
+  name: primary-domain
+spec:
+  host: my-app.dev-core.org
+  port:
+    targetPort: nginx-http
+  tls:
+    termination: edge
+  to:
+    kind: Service
+    name: nginx
+    weight: 100
+  wildcardPolicy: None

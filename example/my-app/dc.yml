@@ -1,0 +1,64 @@
+kind: DeploymentConfig
+apiVersion: v1
+metadata:
+  name: "${DC_NAME}"
+
+spec:
+  replicas: 1
+  selector:
+    name: "${DC_NAME}"
+  strategy:
+     type: Rolling
+
+  template:
+    metadata:
+      labels:
+        name: "${DC_NAME}"
+
+    spec:
+      containers:
+        - name: "${DC_NAME}"
+          image: "docker-registry.default.svc:5000/oc-project/my-app:prod"
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "850m"
+              memory: "2Gi"
+            limits:
+              memory: "10Gi"
+          envFrom: 
+            - configMapRef:
+                name: my-app-config
+
+  triggers:
+    - type: ConfigChange
+    - type: ImageChange
+      imageChangeParams:
+        automatic: true
+        containerNames:
+          - "${DC_NAME}"
+        from:
+          kind: ImageStreamTag
+          name: 'my-app:prod'
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: my-app-config
+data:
+  DB_HOST: "mysql"
+  STARTUP_ARGS: "-Duser.timezone=Europe/Berlin"
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: my-app
+spec:
+  selector:
+    name: "${DC_NAME}"
+  ports:
+    - name: http
+      protocol: TCP
+      port: 8080
+  type: ClusterIP

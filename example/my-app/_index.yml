@@ -1,0 +1,7 @@
+enabled: true
+postApplyTemplates: [nsq-template]
+vars:
+  NSQ_NAME: 'nsq-my-app'
+
+dc:
+  name: my-app
