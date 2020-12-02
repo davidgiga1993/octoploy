@@ -1,0 +1,7 @@
+enabled: true
+applyTemplates: [ app-template ]
+vars:
+  BASE: "3"
+  PARAM_A: 'ABC'
+dc:
+  name: 'ABC'

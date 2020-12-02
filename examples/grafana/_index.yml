@@ -1,0 +1,9 @@
+enabled: true
+dc:
+  name: grafana
+
+vars:
+  DOMAIN: grafana-yams-prod.openshift.com
+
+on-config-change:
+  - deploy

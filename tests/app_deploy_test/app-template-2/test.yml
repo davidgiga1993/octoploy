@@ -1,0 +1,7 @@
+kind: DeploymentConfig
+apiVersion: v1
+metadata:
+  name: "${PARAM_A}"
+  name2: "${SECOND}"
+  base: "${BASE}"
+  DC_NAME: "${DC_NAME}"

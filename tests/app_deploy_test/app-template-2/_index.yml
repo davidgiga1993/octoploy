@@ -1,0 +1,7 @@
+enabled: true
+type: template
+vars:
+  BASE: 1
+params:
+  - PARAM_A
+  - SECOND

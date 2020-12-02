@@ -1,0 +1,10 @@
+enabled: true
+applyTemplates: [ app-template-2 ]
+forEach:
+  - DC_NAME: entity-compare-api
+    PARAM_A: 8080
+    SECOND: 1
+
+  - DC_NAME: favorite-api
+    PARAM_A: 8081
+    SECOND: 2

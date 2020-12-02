@@ -1,0 +1,4 @@
+type: template
+enabled: true
+params:
+  - NSQ_LOOKUP

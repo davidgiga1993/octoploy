@@ -4,7 +4,7 @@ import argparse
 import os
 
 from config.Config import RootConfig
-from deploy.AppDeploy import AppDeployRunner
+from deploy.AppDeploy import AppDeployRunner, AppDeployment
 
 
 def reload_config(args):
@@ -29,10 +29,8 @@ def deploy_app(args):
     root_config = RootConfig.load(args.config_dir)
     app_config = root_config.load_app_config(args.name[0])
 
-    runner = AppDeployRunner(root_config, app_config)
-    if args.dry_run is not None:
-        runner.write_file(args.dry_run)
-    runner.deploy()
+    deployment = AppDeployment(root_config, app_config, dry_run=args.dry_run)
+    deployment.deploy()
     print('Done')
 
 
@@ -54,7 +52,7 @@ def deploy_all(args):
             # Silently skip
             continue
 
-        AppDeployRunner(root_config, app_config).deploy()
+        AppDeployment(root_config, app_config).deploy()
     print('Done')
 
 
@@ -70,12 +68,13 @@ def main():
 
     deploy_parser = subparsers.add_parser('deploy', help='Deploys the configuration of an application')
     deploy_parser.add_argument('--dry-run', dest='dry_run',
-                               help='Writes the final objects into a yml file instead of deployin them')
+                               help='Writes all objects into a yml file instead of deploying them. '
+                                    'This does not communicate with openshift in any way')
     deploy_parser.add_argument('name', help='Name of the app which should be deployed (folder name)', nargs=1)
     deploy_parser.set_defaults(func=deploy_app)
 
     deploy_all_parser = subparsers.add_parser('deploy-all',
-                                              help='Deploys all configurations of all defined application')
+                                              help='Deploys all objects of all enabled application')
     deploy_all_parser.set_defaults(func=deploy_all)
 
     args = parser.parse_args()

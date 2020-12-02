@@ -1,0 +1,76 @@
+kind: DeploymentConfig
+apiVersion: v1
+metadata:
+  name: "${DC_NAME}"
+
+spec:
+  replicas: 1
+  selector:
+    name: "${DC_NAME}"
+
+  template:
+    metadata:
+      labels:
+        name: "${DC_NAME}"
+
+    spec:
+      containers:
+        - name: "${DC_NAME}"
+          image: "grafana/grafana:latest"
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "10m"
+              memory: "50Mi"
+            limits:
+              memory: "1Gi"
+          envFrom: 
+            - configMapRef:
+                name: grafana-config
+
+          volumeMounts:
+            - name: grafana-data-volume
+              mountPath: /var/lib/grafana
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+
+      volumes:
+        - name: grafana-data-volume
+          persistentVolumeClaim:
+            claimName: "pvc-grafana-data"
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: grafana-config
+data:
+  GF_LOG_MODE: "console"
+  GF_SERVER_SERVE_FROM_SUB_PATH: "false"
+  GF_SERVER_ROOT_URL: "https://${DOMAIN}"
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: grafana
+spec:
+  selector:
+    name: "${DC_NAME}"
+  ports:
+    - name: web
+      protocol: TCP
+      port: 3000
+  type: ClusterIP

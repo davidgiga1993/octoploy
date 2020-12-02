@@ -18,7 +18,7 @@ spec:
           command:
             - '/nsqd'
           args:
-            - '--lookupd-tcp-address=nsqlookupd:4160'
+            - '--lookupd-tcp-address=${NSQ_LOOKUP}'
             - '--data-path=/data/${DC_NAME}'
             - '--broadcast-address=${DC_NAME}-nsq'
 

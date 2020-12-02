@@ -1,7 +1,7 @@
 enabled: true
 postApplyTemplates: [nsq-template]
 vars:
-  NSQ_NAME: 'nsq-my-app'
+  NSQ_LOOKUP: 'nsq-lookup:4160'
 
 dc:
   name: my-app
