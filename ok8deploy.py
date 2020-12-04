@@ -3,12 +3,12 @@ from __future__ import annotations
 import argparse
 import os
 
-from config.Config import RootConfig
-from deploy.AppDeploy import AppDeployRunner, AppDeployment
+from config.Config import ProjectConfig, RunMode
+from deploy.AppDeploy import AppDeployment
 
 
 def reload_config(args):
-    root_config = RootConfig.load(args.config_dir)
+    root_config = ProjectConfig.load(args.config_dir)
     app_config = root_config.load_app_config(args.name[0])
     if not app_config.enabled():
         print('App is disabled')
@@ -25,20 +25,18 @@ def reload_config(args):
     print('Done')
 
 
-def deploy_app(args):
-    root_config = RootConfig.load(args.config_dir)
-    app_config = root_config.load_app_config(args.name[0])
-
-    deployment = AppDeployment(root_config, app_config, dry_run=args.dry_run)
+def _run_app_deploy(config_dir: str, app_name: str, mode: RunMode):
+    root_config = ProjectConfig.load(config_dir)
+    app_config = root_config.load_app_config(app_name)
+    deployment = AppDeployment(root_config, app_config, mode)
     deployment.deploy()
     print('Done')
 
 
-def deploy_all(args):
-    base_dir = args.config_dir
-    root_config = RootConfig.load(args.config_dir)
-    for dir_item in os.listdir(base_dir):
-        path = os.path.join(base_dir, dir_item)
+def _run_apps_deploy(config_dir: str, mode: RunMode):
+    root_config = ProjectConfig.load(config_dir)
+    for dir_item in os.listdir(config_dir):
+        path = os.path.join(config_dir, dir_item)
         if not os.path.isdir(path):
             continue
 
@@ -52,8 +50,34 @@ def deploy_all(args):
             # Silently skip
             continue
 
-        AppDeployment(root_config, app_config).deploy()
+        AppDeployment(root_config, app_config, mode).deploy()
     print('Done')
+
+
+def plan_app(args):
+    mode = RunMode()
+    mode.plan = True
+    _run_app_deploy(args.config_dir, args.name[0], mode)
+
+
+def deploy_app(args):
+    mode = RunMode()
+    mode.out_file = args.out_file
+    mode.dry_run = args.dry_run
+    _run_app_deploy(args.config_dir, args.name[0], mode)
+
+
+def plan_all(args):
+    mode = RunMode()
+    mode.plan = True
+    _run_apps_deploy(args.config_dir, mode)
+
+
+def deploy_all(args):
+    mode = RunMode()
+    mode.out_file = args.out_file
+    mode.dry_run = args.dry_run
+    _run_apps_deploy(args.config_dir, mode)
 
 
 def main():
@@ -66,15 +90,30 @@ def main():
     reload_parser.add_argument('name', help='Name of the app which should be reloaded (folder name)', nargs=1)
     reload_parser.set_defaults(func=reload_config)
 
+    plan_parser = subparsers.add_parser('plan', help='Verifies what changes have to be applied for a single app')
+    plan_parser.add_argument('name', help='Name of the app which should be checked (folder name)', nargs=1)
+    plan_parser.set_defaults(func=plan_app)
+
+    plan_all_parser = subparsers.add_parser('plan-all',
+                                            help='Verifies what changes have to be applied for a single app')
+    plan_all_parser.set_defaults(func=plan_all)
+
     deploy_parser = subparsers.add_parser('deploy', help='Deploys the configuration of an application')
-    deploy_parser.add_argument('--dry-run', dest='dry_run',
+    deploy_parser.add_argument('--out-file', dest='out_file',
                                help='Writes all objects into a yml file instead of deploying them. '
                                     'This does not communicate with openshift in any way')
+    deploy_parser.add_argument('--dry-run', dest='dry_run', help='Does not interact with openshift',
+                               action='store_true')
     deploy_parser.add_argument('name', help='Name of the app which should be deployed (folder name)', nargs=1)
     deploy_parser.set_defaults(func=deploy_app)
 
     deploy_all_parser = subparsers.add_parser('deploy-all',
                                               help='Deploys all objects of all enabled application')
+    deploy_all_parser.add_argument('--out-file', dest='out_file',
+                                   help='Writes all objects into a yml file instead of deploying them. '
+                                        'This does not communicate with openshift in any way')
+    deploy_all_parser.add_argument('--dry-run', dest='dry_run', help='Does not interact with openshift',
+                                   action='store_true')
     deploy_all_parser.set_defaults(func=deploy_all)
 
     args = parser.parse_args()

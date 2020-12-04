@@ -2,7 +2,7 @@ import hashlib
 
 import yaml
 
-from config.Config import RootConfig, AppConfig
+from config.Config import ProjectConfig, AppConfig, RunMode
 from oc.Oc import Oc
 
 
@@ -13,10 +13,17 @@ class OcObjectDeployer:
 
     HASH_ANNOTATION = 'yml-hash'
 
-    def __init__(self, root_config: RootConfig, oc: Oc, app_config: AppConfig):
-        self._root_config = root_config  # type: RootConfig
+    def __init__(self, root_config: ProjectConfig, oc: Oc, app_config: AppConfig, mode: RunMode = RunMode()):
+        self._root_config = root_config  # type: ProjectConfig
         self._app_config = app_config  # type: AppConfig
         self._oc = oc  # type: Oc
+        self._mode = mode
+
+    def select_project(self):
+        """
+        Selects the required openshift project
+        """
+        self._oc.project(self._root_config.get_oc_project_name())
 
     def deploy_object(self, data: dict):
         """
@@ -45,11 +52,14 @@ class OcObjectDeployer:
             return
 
         if current_hash == hash_val:
-            print(item_name + ' has not been changed')
+            print('No change in ' + item_name)
             return
 
-        print(item_name + ' has changed: Applying update')
+        if self._mode.plan:
+            print('Update required for ' + item_name)
+            return
 
+        print('Applying update ' + item_name + ' (item has changed)')
         self._oc.apply(str_repr)
         self._oc.annotate(item_name, 'yml-hash', hash_val)
 

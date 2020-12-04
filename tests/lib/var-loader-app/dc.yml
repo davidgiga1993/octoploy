@@ -1,0 +1,2 @@
+kind: Service
+KEY: ${CERT_KEY}

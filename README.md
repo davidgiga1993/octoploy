@@ -52,8 +52,12 @@ configs
 Here is a sample `_root.yml` file
 ```yml
 project: 'my-oc-project'
+
+# OPTIONAL STUFF
+# Global variables
+vars:
+  DOMAIN: "dev-core.org"
 ```
-Any deployments made will happen in this project.
 
 ### App config
 An app is represented by a folder containing an `_index.yml` file and any additional openshift yml files.
@@ -119,7 +123,20 @@ This will create a new configmap from the file `nginx.conf` with the name `nginx
 Any changes made to the file will be automatically deployed.
 
 ### Variables
-You can refer to variables in yml files by using `${VAR-NAME}`
+You can refer to variables in yml files by using `${VAR-NAME}`.
+Variables can also be loaded from files.
+```yml
+vars:
+  # Regular key/value assignment
+  key: value
+  
+  # This will load the public/private and intermediate certs
+  # from a pem file and store it in *_KEY, *_PUBLIC, *_CACERT
+  # where * is the key of the value (CERT in this example)
+  CERT:
+    loader: pem
+    file: my-cert.pem
+```
 
 ### Global variables
 The following variables are available anywhere inside the yml files by default
@@ -127,7 +144,7 @@ The following variables are available anywhere inside the yml files by default
 | Key | Value |
 | --- | --- | 
 | `DC_NAME` | Name of the deployment-config in the `_index.yml` |
-
+| `OC_PROJECT` | Name of the openshift project in `_root.yml` |
 
 ### Templates
 You can use templates to reuse and generate yml files for openshift.
@@ -245,6 +262,33 @@ forEach:
   - DC_NAME: favorite-api
     PORT: 8081
 ```
+
+#### Library
+It's possible to define whole project as a `library`. This allows all apps and templates to be reused
+by another project. An example would be the same setup for multiple systems which are separated by projects (e.g. `dev/test/prod`).
+
+```yml
+# testLib/_root.yml
+type: library
+
+# Required parameters
+params:
+  - domain
+  - dockerDomain
+  - imageStreamTag
+```
+```yml
+# prod/_root.yml
+project: 'prod-project'
+inherit: testLib
+
+# Required parameters
+vars:
+  domain: my-prod.dev-core.org
+  dockerDomain: prod-docker.com
+  imageStreamTag: prod
+```
+When you now deploy the `prod` project it will inherit all apps inside `testLib`.
 
 ## Change tracking
 Changes are detected by storing a md5 sum in the label of the object.

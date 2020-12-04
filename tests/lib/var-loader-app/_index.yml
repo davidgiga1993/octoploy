@@ -1,0 +1,8 @@
+enabled: true
+dc:
+  name: 'ABC'
+
+vars:
+  CERT:
+    loader: pem
+    file: dummy.pem

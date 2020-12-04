@@ -1,5 +1,8 @@
 enabled: true
 applyTemplates: [ app-template-2 ]
+vars:
+  REMAPPED: hello
+
 forEach:
   - DC_NAME: entity-compare-api
     PARAM_A: 8080

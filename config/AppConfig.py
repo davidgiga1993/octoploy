@@ -2,27 +2,21 @@ from __future__ import annotations
 
 from typing import List, Optional, Dict
 
+from config.BaseConfig import BaseConfig
 from config.ConfigMap import ConfigMap
 from config.DeploymentActionConfig import DeploymentActionConfig
-from config.YmlConfig import YmlConfig
 from utils.DictUtils import DictUtils
 from utils.Errors import MissingVar
 
 
-class AppConfig(YmlConfig):
+class AppConfig(BaseConfig):
     """
     Contains the configuration for the deployment of a single app
     """
 
     def __init__(self, config_root: str, path: Optional[str], external_vars: Dict[str, str] = None):
-        super().__init__(path)
+        super().__init__(path, external_vars)
         self._config_root = config_root
-        self._external_vars = {}  # type: Dict[str, str]
-        """
-        External variables for the templating engine
-        """
-        if external_vars is not None:
-            self._external_vars = external_vars
 
     def get_config_maps(self) -> List[ConfigMap]:
         """
@@ -108,18 +102,10 @@ class AppConfig(YmlConfig):
         Returns all variables which are available for the yml files
         :return: Key, value map
         """
-        items = self.data.get('vars', {})
-        items.update(self._external_vars)
+        items = super().get_replacements()
         dc_name = self.get_dc_name()
         if dc_name is not None:
             items.update({
                 'DC_NAME': dc_name
             })
         return items
-
-    def get_params(self) -> List[str]:
-        """
-        Returns all required parameters
-        :return: Names
-        """
-        return self.data.get('params', [])

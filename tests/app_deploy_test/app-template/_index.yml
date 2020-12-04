@@ -3,4 +3,5 @@ type: template
 vars:
   BASE: 2
   SECOND: "DEF"
+  REMAPPED: "${PARAM_A}-1"
 applyTemplates: [ app-template-2 ]

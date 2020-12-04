@@ -1,6 +1,6 @@
 from unittest import TestCase, mock
 
-from config.Config import RootConfig, AppConfig
+from config.Config import ProjectConfig, AppConfig
 from processing.YmlTemplateProcessor import YmlTemplateProcessor
 
 

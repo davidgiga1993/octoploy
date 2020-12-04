@@ -2,6 +2,7 @@ enabled: true
 type: template
 vars:
   BASE: 1
+  REMAPPED2: ${PARAM_A}
 params:
   - PARAM_A
   - SECOND

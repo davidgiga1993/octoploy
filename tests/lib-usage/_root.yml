@@ -1,0 +1,5 @@
+project: 'oc-project'
+inherit: 'lib'
+
+vars:
+  lib-param: 'paramValue'

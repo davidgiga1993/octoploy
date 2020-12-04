@@ -1,1 +1,3 @@
 project: 'oc-project'
+vars:
+  globalVar: 'global'
