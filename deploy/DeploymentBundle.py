@@ -5,6 +5,7 @@ import os
 import yaml
 
 from deploy.OcObjectDeployer import OcObjectDeployer
+from processing.DataPreProcessor import DataPreProcessor
 from processing.OcObjectMerge import OcObjectMerge
 from processing.YmlTemplateProcessor import YmlTemplateProcessor
 
@@ -14,8 +15,9 @@ class DeploymentBundle:
     Holds all objects of a single deployment
     """
 
-    def __init__(self):
+    def __init__(self, pre_processor: DataPreProcessor):
         self.objects = []  # All objects which should be deployed
+        self._pre_processor = pre_processor
 
     def add_object(self, data: dict, template_processor: YmlTemplateProcessor):
         """
@@ -44,6 +46,7 @@ class DeploymentBundle:
                 # Data has been merged
                 return
 
+        self._pre_processor.process(data)
         self.objects.append(data)
 
     def deploy(self, deploy_runner: OcObjectDeployer):

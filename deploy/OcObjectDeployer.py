@@ -3,7 +3,7 @@ import hashlib
 import yaml
 
 from config.Config import ProjectConfig, AppConfig, RunMode
-from oc.Oc import Oc
+from oc.Oc import Oc, K8Api
 
 
 class OcObjectDeployer:
@@ -16,13 +16,16 @@ class OcObjectDeployer:
     def __init__(self, root_config: ProjectConfig, oc: Oc, app_config: AppConfig, mode: RunMode = RunMode()):
         self._root_config = root_config  # type: ProjectConfig
         self._app_config = app_config  # type: AppConfig
-        self._oc = oc  # type: Oc
+        self._oc = oc  # type: K8Api
         self._mode = mode
 
     def select_project(self):
         """
         Selects the required openshift project
         """
+        context = self._root_config.get_oc_context()
+        if context is not None:
+            self._oc.switch_context(context)
         self._oc.project(self._root_config.get_oc_project_name())
 
     def deploy_object(self, data: dict):

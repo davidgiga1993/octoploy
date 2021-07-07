@@ -64,7 +64,7 @@ class AppDeployRunner:
     def __init__(self, root_config: ProjectConfig, app_config: AppConfig, mode: RunMode = RunMode()):
         self._root_config = root_config
         self._app_config = app_config
-        self._bundle = DeploymentBundle()
+        self._bundle = DeploymentBundle(self._root_config.get_pre_processor())
         self._mode = mode
 
     def deploy(self):

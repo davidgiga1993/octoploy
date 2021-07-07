@@ -1,12 +1,107 @@
 import json
 import platform
 import subprocess
+from abc import abstractmethod
 from typing import Optional, List
 
 from oc.Model import ItemDescription, PodData
 
 
-class Oc:
+class K8Api:
+    @abstractmethod
+    def tag(self, source: str, dest: str):
+        """
+        Tags the given image stream (OC only!)
+        :param source: Source tag
+        :param dest: Destination tag
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def get(self, name: str) -> Optional[ItemDescription]:
+        """
+        Returns the given item
+        :param name: Name
+        :return: Data (if found)
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def apply(self, yml: str) -> str:
+        """
+        Applies the given yml file
+        :param yml: Yml file
+        :return: Stdout
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def get_pod(self, dc_name: str = None, pod_name: str = None) -> Optional[PodData]:
+        """
+        Returns a pod by deployment name or pod name
+        :param dc_name: Deployment name
+        :param pod_name: Pod name
+        :return: Pod (if found)
+        :raise Exception: More than one pod found
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def get_pods(self, dc_name: str = None, pod_name: str = None) -> List[PodData]:
+        """
+        Returns all pods which match the given deployment name or pod name
+        :param dc_name: Deployment name
+        :param pod_name: Pod name
+        :return: Pods
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def rollout(self, name: str):
+        """
+        Re-Deploys the latest DC with the given name
+        :param name: Deployment name
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def exec(self, pod_name: str, cmd: str, args: List[str]):
+        """
+        Executes a command in the given pod
+        :param pod_name: Pod name
+        :param cmd: Command
+        :param args: Arguments
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def project(self, project: str):
+        """
+        Changes the default project / namespace
+        :param project: Project
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def switch_context(self, context: str):
+        """
+        Changes the configuration context
+        :param context: Context
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def annotate(self, name: str, key: str, value: str):
+        """
+        Add / updates the annotation at the given item
+        :param name: Name
+        :param key: Annotation key
+        :param value: Annotation value
+        """
+        raise NotImplemented
+
+
+class Oc(K8Api):
     def tag(self, source: str, dest: str):
         self._exec(['tag', source, dest], print_out=True)
 
@@ -74,7 +169,13 @@ class Oc:
     def project(self, project: str):
         self._exec(['project', project])
 
-    def _exec(self, args, print_out: bool = False, stdin: str = None):
+    def switch_context(self, context: str):
+        raise NotImplemented('Not available for openshift')
+
+    def annotate(self, name: str, key: str, value: str):
+        self._exec(['annotate', '--overwrite=true', name, key + '=' + value])
+
+    def _exec(self, args, print_out: bool = False, stdin: str = None) -> str:
         args.insert(0, self._get_bin())
         if print_out:
             print(str(args))
@@ -88,10 +189,32 @@ class Oc:
             print(output)
         return output
 
-    def _get_bin(self):
+    def _get_bin(self) -> str:
         if platform.system() == 'Windows':
             return 'oc.exe'
         return 'oc'
 
-    def annotate(self, name: str, key: str, value: str):
-        self._exec(['annotate', '--overwrite=true', name, key + '=' + value])
+
+class K8(Oc):
+    _namespace: str = ''
+
+    def rollout(self, name: str):
+        self._exec(['rollout', 'restart', 'deployments', name])
+
+    def tag(self, source: str, dest: str):
+        raise NotImplemented('Not available for k8')
+
+    def project(self, project: str):
+        self._namespace = project
+
+    def switch_context(self, context: str):
+        self._exec(['config', 'use-context', context])
+
+    def _exec(self, args, print_out: bool = False, stdin: str = None):
+        args.append('--namespace=' + self._namespace)
+        return super()._exec(args, print_out, stdin)
+
+    def _get_bin(self) -> str:
+        if platform.system() == 'Windows':
+            return 'kubectl.exe'
+        return 'kubectl'

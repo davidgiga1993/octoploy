@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from config.Config import AppConfig
 
-from oc.Oc import Oc
+from oc.Oc import K8Api
 
 
 class DeploymentActionConfig:
@@ -17,7 +17,7 @@ class DeploymentActionConfig:
         self._data = data
         self._app_config = app_config
 
-    def run(self, oc: Oc):
+    def run(self, oc: K8Api):
         if self._data == 'deploy':
             oc.rollout(self._app_config.get_dc_name())
             return

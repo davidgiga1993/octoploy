@@ -10,6 +10,10 @@ class OcObjectMerge:
     """
     NAME_PATH = 'metadata.name'
 
+    def __init__(self):
+        self._existing_dc = None  # type: DeploymentConfig
+        self._new_dc = None  # type: DeploymentConfig
+
     def merge(self, existing, to_add) -> bool:
         """
         Merges the given openshift object into one.
@@ -39,6 +43,8 @@ class OcObjectMerge:
         :param existing: Deployment config where the data should be added
         :param to_add: New data
         """
+        self._existing_dc = existing
+        self._new_dc = to_add
         to_add_template_name = to_add.get_template_name()
         existing_template_name = existing.get_template_name()
         # If the name of a template is not defined it will be merged regardless of the name of the existing template
@@ -78,7 +84,9 @@ class OcObjectMerge:
             if item == parent_item:
                 continue
 
-            raise ValueError('Value conflict: ' + str(item) + '<>' + str(parent_item))
+            existing[key] = item
+            print('Value conflict: ' + str(item) + ' (from ' + self._new_dc.get_template_name() + ') replaces ' +
+                  str(parent_item) + ' (from ' + self._existing_dc.get_template_name() + ')')
 
     def _merge_named_item(self, existing_items: Dict[str, NamedItem], new_item: Dict[str, NamedItem], add_func_call):
         """

@@ -5,7 +5,8 @@ from typing import Optional, Dict
 
 from config.AppConfig import AppConfig
 from config.BaseConfig import BaseConfig
-from oc.Oc import Oc
+from oc.Oc import Oc, K8, K8Api
+from processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
 from processing.YmlTemplateProcessor import YmlTemplateProcessor
 from utils.Errors import ConfigError
 
@@ -63,15 +64,30 @@ class ProjectConfig(BaseConfig):
         """
         return self.data.get('type', '') == 'library'
 
-    def create_oc(self) -> Oc:
+    def get_pre_processor(self) -> DataPreProcessor:
         """
-        Creates a new openshift client
+        Returns the pre processor for the current config
+        """
+        mode = self.data.get('mode', 'oc')
+        if mode == 'k8':
+            return OcToK8PreProcessor()
+        return DataPreProcessor()
+
+    def create_oc(self) -> K8Api:
+        """
+        Creates a new openshift / k8 client
         :return: Client
         """
         if self._oc is not None:
             return self._oc
 
-        oc = Oc()
+        mode = self.data.get('mode', 'oc')
+        if mode == 'oc':
+            oc = Oc()
+        elif mode == 'k8':
+            oc = K8()
+        else:
+            raise ValueError(f'Invalid mode: {mode}')
         self._oc = oc
         return oc
 
@@ -82,6 +98,13 @@ class ProjectConfig(BaseConfig):
         :return: Name or null for libraries
         """
         return self.data.get('project')
+
+    def get_oc_context(self) -> Optional[str]:
+        """
+        Returns the configuration context name
+        :return: Name
+        """
+        return self.data.get('context')
 
     def get_template_processor(self) -> YmlTemplateProcessor:
         root_processor = super().get_template_processor()
