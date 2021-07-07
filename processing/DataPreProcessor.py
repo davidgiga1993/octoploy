@@ -22,15 +22,17 @@ class OcToK8PreProcessor(DataPreProcessor):
                 yml['apiVersion'] = 'apps/' + version
 
             name_selector = DictUtils.get(yml, 'spec.selector.name')
-            DictUtils.delete(yml, 'spec.selector.name')
-            DictUtils.set(yml, 'spec.selector.matchLabels.app', name_selector)
+            if name_selector is not None:
+                DictUtils.delete(yml, 'spec.selector.name')
+                DictUtils.set(yml, 'spec.selector.matchLabels.app', name_selector)
 
             strategy_type = DictUtils.get(yml, 'spec.strategy.type')
             if strategy_type == 'Rolling':
                 DictUtils.set(yml, 'spec.strategy.type', 'RollingUpdate')
 
             name = DictUtils.get(yml, 'spec.template.metadata.labels.name')
-            DictUtils.delete(yml, 'spec.template.metadata.labels.name')
-            DictUtils.set(yml, 'spec.template.metadata.labels.app', name)
+            if name is not None:
+                DictUtils.delete(yml, 'spec.template.metadata.labels.name')
+                DictUtils.set(yml, 'spec.template.metadata.labels.app', name)
 
             return
