@@ -37,7 +37,8 @@ class DeploymentBundle:
             return
 
         # Pre-process any variables
-        template_processor.process(data)
+        if template_processor is not None:
+            template_processor.process(data)
 
         merger = OcObjectMerge()
         # Check if the new data can be merged into any existing objects
@@ -60,7 +61,9 @@ class DeploymentBundle:
         # we want deploymentconfigs to be the last items since a config change might
         # have an impact
         def sorting(x):
-            if x['kind'].lower() == 'DeploymentConfig'.lower():
+            object_kind = x['kind'].lower()
+            if object_kind == 'DeploymentConfig'.lower() or \
+                    object_kind == 'Deployment'.lower():
                 return 1
             return 0
 

@@ -38,7 +38,7 @@ class OcObjectDeployer:
         str_repr = yaml.dump(data, sort_keys=True)
         # Sanity check
         if '${' in str_repr:
-            raise ValueError('At least one variable could not been resolved: ' + str_repr)
+            print('Warning: At least one variable could not been resolved: ' + str_repr)
 
         hash_val = hashlib.md5(str_repr.encode('utf-8')).hexdigest()
 

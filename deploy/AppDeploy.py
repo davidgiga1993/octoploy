@@ -142,5 +142,5 @@ class AppDeployRunner:
         :param template_processor: Template processor which should be applied
         """
         for config in self._app_config.get_config_maps():
-            oc_obj = config.build_oc_obj(self._app_config.get_config_root())
-            self._bundle.add_object(oc_obj, template_processor)
+            cm_object = config.build_object(self._app_config.get_config_root())
+            self._bundle.add_object(cm_object.data, None if cm_object.disable_templating else template_processor)

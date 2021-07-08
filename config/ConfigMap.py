@@ -1,4 +1,11 @@
 import os
+from typing import Dict
+
+
+class ConfigMapObject:
+    def __init__(self, data: Dict, disable_templating: bool = False):
+        self.data = data
+        self.disable_templating = disable_templating
 
 
 class ConfigMap:
@@ -6,11 +13,11 @@ class ConfigMap:
         self._data = data
         self.name = data['name']
         self.files = data['files']
+        self.disable_templating = data.get('disableTemplating', False)
 
-    def build_oc_obj(self, config_root: str):
+    def build_object(self, config_root: str) -> ConfigMapObject:
         """
-        Creates an openshift configmap object out of this definition
-        :return: Object
+        Creates an configmap object out of this definition
         """
         config_data = {}
         data = {
@@ -29,4 +36,4 @@ class ConfigMap:
                 content = f.read()
             config_data[name] = content
 
-        return data
+        return ConfigMapObject(data, self.disable_templating)
