@@ -1,6 +1,6 @@
 from unittest import TestCase, mock
 
-from config.Config import ProjectConfig, AppConfig
+from config.Config import AppConfig
 from processing.YmlTemplateProcessor import YmlTemplateProcessor
 
 
@@ -12,12 +12,16 @@ dc:
     name: hello
 vars:
     MY_VAR: testVal
+    MY_OBJECT:
+        someItem: 1
+        someOtherItem: 2
 ''')):
             app_config = AppConfig('', '')
 
         proc = YmlTemplateProcessor(app_config)
         data = {'root': {
             'item': '${DC_NAME}',
+            'object': '${MY_OBJECT}',
             'list': [{
                 'other': '${DC_NAME}'
             }],
@@ -29,6 +33,10 @@ vars:
         self.assertEqual('hello', data['root']['item'])
         self.assertEqual('hello', data['root']['list'][0]['other'])
         self.assertEqual('testVal', data['root']['sub']['item2'])
+        self.assertEqual({
+            'someItem': 1,
+            'someOtherItem': 2
+        }, data['root']['object'])
 
     def test_params(self):
         with mock.patch('builtins.open', mock.mock_open(read_data='''
@@ -53,3 +61,22 @@ vars:
         self.assertEqual('hello', data['root']['item'])
         self.assertEqual('hello', data['root']['list'][0]['other'])
         self.assertEqual('testVal', data['root']['sub']['item2'])
+
+    def test_merge_inline(self):
+        with mock.patch('builtins.open', mock.mock_open(read_data='''
+dc:
+    name: hello
+vars:
+    MERGE_OBJ: 
+        someKey: value
+''')):
+            app_config = AppConfig('', '')
+
+        proc = YmlTemplateProcessor(app_config)
+        data = {'root': {
+            'item': '${DC_NAME}',
+            '_ok8merge': '${MERGE_OBJ}',
+        }}
+        proc.process(data)
+        self.assertEqual('hello', data['root']['item'])
+        self.assertEqual('value', data['root']['someKey'])

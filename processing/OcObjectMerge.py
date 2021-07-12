@@ -2,15 +2,17 @@ from typing import Dict
 
 from oc.Model import DeploymentConfig, NamedItem
 from utils.DictUtils import DictUtils
+from utils.Log import Log
 
 
-class OcObjectMerge:
+class OcObjectMerge(Log):
     """
     Merges openshift objects
     """
     NAME_PATH = 'metadata.name'
 
     def __init__(self):
+        super().__init__()
         self._existing_dc = None  # type: DeploymentConfig
         self._new_dc = None  # type: DeploymentConfig
 
@@ -35,7 +37,7 @@ class OcObjectMerge:
             self._merge_dc(DeploymentConfig(existing), DeploymentConfig(to_add))
             return True
 
-        print('Don\'t know how to merge ' + expected_type)
+        self.log.warning('Don\'t know how to merge ' + expected_type)
 
     def _merge_dc(self, existing: DeploymentConfig, to_add: DeploymentConfig):
         """
@@ -85,8 +87,8 @@ class OcObjectMerge:
                 continue
 
             existing[key] = item
-            print('Value conflict: ' + str(item) + ' (from ' + self._new_dc.get_template_name() + ') replaces ' +
-                  str(parent_item) + ' (from ' + self._existing_dc.get_template_name() + ')')
+            self.log.warning(f'Value conflict: {item} (from {self._new_dc.get_template_name()}) replaces ' + \
+                             f'{parent_item} (from {self._existing_dc.get_template_name()})')
 
     def _merge_named_item(self, existing_items: Dict[str, NamedItem], new_item: Dict[str, NamedItem], add_func_call):
         """

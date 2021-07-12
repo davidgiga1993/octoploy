@@ -1,28 +1,31 @@
 from __future__ import annotations
 
 import argparse
+import logging
 import os
 
 from config.Config import ProjectConfig, RunMode
 from deploy.AppDeploy import AppDeployment
+from utils.Log import Log
 
+log_instance = Log('Ok8Deploy')
 
 def reload_config(args):
     root_config = ProjectConfig.load(args.config_dir)
     app_config = root_config.load_app_config(args.name[0])
     if not app_config.enabled():
-        print('App is disabled')
+        log_instance.log.error('App is disabled')
         return
     if app_config.is_template():
-        print('App is a template')
+        log_instance.log.error('App is a template')
         return
 
     oc = root_config.create_oc()
-    print('Reloading ' + app_config.get_dc_name())
+    log_instance.log.info('Reloading ' + app_config.get_dc_name())
     reload_actions = app_config.get_reload_actions()
     for action in reload_actions:
         action.run(oc)
-    print('Done')
+    log_instance.log.info('Done')
 
 
 def _run_app_deploy(config_dir: str, app_name: str, mode: RunMode):
@@ -30,7 +33,7 @@ def _run_app_deploy(config_dir: str, app_name: str, mode: RunMode):
     app_config = root_config.load_app_config(app_name)
     deployment = AppDeployment(root_config, app_config, mode)
     deployment.deploy()
-    print('Done')
+    log_instance.log.info('Done')
 
 
 def _run_apps_deploy(config_dir: str, mode: RunMode):
@@ -51,7 +54,7 @@ def _run_apps_deploy(config_dir: str, mode: RunMode):
             continue
 
         AppDeployment(root_config, app_config, mode).deploy()
-    print('Done')
+    log_instance.log.info('Done')
 
 
 def plan_app(args):
@@ -121,6 +124,9 @@ def main():
         parser.print_help()
         exit(1)
         return
+
+    # Setup logging
+    logging.basicConfig(level=logging.INFO, format='%(levelname)-.1s %(asctime)-.19s [%(name)s] %(message)s')
 
     args.func(args)
 

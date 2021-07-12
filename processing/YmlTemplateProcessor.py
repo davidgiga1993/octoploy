@@ -15,6 +15,7 @@ class YmlTemplateProcessor:
     """
 
     VAR_PATTERN = re.compile(r'\${(.+)}')
+    KEY_FIELD_MERGE: str = '_ok8merge'
 
     def __init__(self, config: BaseConfig):
         self._missing_vars = []  # type: List[str]
@@ -42,11 +43,19 @@ class YmlTemplateProcessor:
             for key, value in replacements.items():
                 if not isinstance(value, str):
                     continue
+
+                # The replacement value might refer to another variable
                 for variable_name in self.VAR_PATTERN.findall(value):
                     new_value = replacements.get(variable_name)
                     if new_value is None:
                         print('Warn: Missing referenced variable: ' + variable_name)
                         continue
+                    if value == '${' + variable_name + '}':
+                        # Replace the entire value since the replacement value only consists of the ${} tag
+                        replacements[key] = new_value
+                        found_var = True
+                        continue
+
                     replacements[key] = value.replace('${' + variable_name + '}', str(new_value))
                     found_var = True
 
@@ -63,7 +72,13 @@ class YmlTemplateProcessor:
                 missing_params.append(missing)
             if len(missing_params) > 0:
                 raise MissingParam('The following params are not defined: ' + str(missing_params))
-            print('Warn: The following vars are not defined: ' + str(self._missing_vars))
+            print('Warning: The following vars are not defined: ' + str(self._missing_vars))
+
+        self._sanity_check(data)
+
+    def _sanity_check(self, data: Dict[str, any]):
+        if '${' in str(data):
+            print('Warning: At least one variable could not been resolved: ' + str(data))
 
     def _get_params(self) -> Set[str]:
         """
@@ -78,7 +93,7 @@ class YmlTemplateProcessor:
             params.update(self._child._get_params())
         return params
 
-    def _get_replacements(self) -> Dict[str, str]:
+    def _get_replacements(self) -> Dict[str, any]:
         """
         Returns all replacements handled by this processor, including all parent variables
         :return: Replacements
@@ -91,17 +106,24 @@ class YmlTemplateProcessor:
             replacements.update(self._child._get_replacements())
         return replacements
 
-    def _walk_dict(self, replacements: Dict[str, str], data: dict):
+    def _walk_dict(self, replacements: Dict[str, any], data: dict):
         """
         Walks through all items in the dict and replaces any known variables
+
         :param replacements: Data which should be used as a replacement
         :param data: Data which should be walked
         """
-        for key, obj in data.items():
-            data[key] = self._walk_item(replacements, obj)
+        for key in list(data.keys()):
+            obj = data[key]
+            if key == self.KEY_FIELD_MERGE:
+                del data[key]
+                data.update(self._walk_item(replacements, obj))
+                continue
+
+            data[key] = self._walk_item(replacements, obj, data, key)
         return data
 
-    def _walk_item(self, replacements, obj):
+    def _walk_item(self, replacements: Dict[str, any], obj: any, parent: dict = None, child_key: str = None) -> any:
         if isinstance(obj, list):
             for idx, item in enumerate(obj):
                 obj[idx] = self._walk_item(replacements, item)
@@ -114,13 +136,13 @@ class YmlTemplateProcessor:
             return self._walk_dict(replacements, obj)
         return obj
 
-    def _replace(self, item: str, replacements):
+    def _replace(self, item: str, replacements: Dict[str, any]) -> any:
         for variable, value in replacements.items():
+            if item == '${' + variable + '}':
+                # Item only contains a tag, simple replace (non textual)
+                return value
+            # The variable tag is surrounded by other str or other tags
             item = item.replace('${' + variable + '}', str(value))
-            if isinstance(value, int) and item == str(value):
-                # The source type was int and the item has been completely substituted
-                # -> Return int type
-                return int(value)
 
         # Search for any missing variables
         if isinstance(item, str):

@@ -3,6 +3,9 @@ from typing import Dict
 
 
 class ConfigMapObject:
+    data: Dict
+    disable_templating: bool = False
+
     def __init__(self, data: Dict, disable_templating: bool = False):
         self.data = data
         self.disable_templating = disable_templating

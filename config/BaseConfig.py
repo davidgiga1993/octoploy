@@ -32,7 +32,7 @@ class BaseConfig(YmlConfig):
     def get_template_processor(self) -> YmlTemplateProcessor:
         return YmlTemplateProcessor(self)
 
-    def get_replacements(self) -> Dict[str, str]:
+    def get_replacements(self) -> Dict[str, any]:
         """
         Returns all variables which are available for the yml files
 
@@ -47,10 +47,13 @@ class BaseConfig(YmlConfig):
             # Value can be a primitive or object
             if isinstance(value, dict):
                 # Is a object, use a loader to load the value
-                loader = ValueLoaderFactory.create(self, value['loader'])
-                new_values = loader.load(value)
-                for new_key, new_val in new_values.items():
-                    new_items[key + new_key] = new_val
+                loader_name = value.get('loader')
+                if loader_name is not None:
+                    loader = ValueLoaderFactory.create(self, value['loader'])
+                    new_values = loader.load(value)
+                    for new_key, new_val in new_values.items():
+                        new_items[key + new_key] = new_val
+                    continue
 
         items.update(new_items)
         items.update(self._external_vars)

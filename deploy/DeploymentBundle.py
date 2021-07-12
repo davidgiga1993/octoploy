@@ -8,14 +8,16 @@ from deploy.OcObjectDeployer import OcObjectDeployer
 from processing.DataPreProcessor import DataPreProcessor
 from processing.OcObjectMerge import OcObjectMerge
 from processing.YmlTemplateProcessor import YmlTemplateProcessor
+from utils.Log import Log
 
 
-class DeploymentBundle:
+class DeploymentBundle(Log):
     """
     Holds all objects of a single deployment
     """
 
     def __init__(self, pre_processor: DataPreProcessor):
+        super().__init__()
         self.objects = []  # All objects which should be deployed
         self._pre_processor = pre_processor
 
@@ -27,13 +29,13 @@ class DeploymentBundle:
         """
         item_kind = data.get('kind', '').lower()
         if item_kind == '':
-            print('Unknown object kind: ' + str(data))
+            self.log.info('Unknown object kind: ' + str(data))
             return
         if item_kind == 'Secret'.lower():
-            print('Secrets are ignored')
+            self.log.info('Secrets are ignored')
             return
         if item_kind == 'PersistentVolumeClaim'.lower():
-            print("PVCs are ignored")
+            self.log.info("PVCs are ignored")
             return
 
         # Pre-process any variables

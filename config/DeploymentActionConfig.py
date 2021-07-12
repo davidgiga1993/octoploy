@@ -2,13 +2,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from utils.Log import Log
+
 if TYPE_CHECKING:
     from config.Config import AppConfig
 
 from oc.Oc import K8Api
 
 
-class DeploymentActionConfig:
+class DeploymentActionConfig(Log):
     """
     Configuration for a single user configurable deployment step
     """
@@ -28,7 +30,7 @@ class DeploymentActionConfig:
             args = exec_config['args']
 
             dc_name = self._app_config.get_dc_name()
-            print('Reloading via exec in pods of ' + dc_name)
+            log.info('Reloading via exec in pods of ' + dc_name)
             pods = oc.get_pods(dc_name=dc_name)
             for pod in pods:
                 oc.exec(pod.name, cmd, args)

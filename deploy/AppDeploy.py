@@ -9,6 +9,7 @@ from config.Config import ProjectConfig, AppConfig, RunMode
 from deploy.DeploymentBundle import DeploymentBundle
 from deploy.OcObjectDeployer import OcObjectDeployer
 from processing.YmlTemplateProcessor import YmlTemplateProcessor
+from utils.Log import Log
 
 
 class AppDeployment:
@@ -56,12 +57,13 @@ class AppDeployRunnerFactory:
         return runners
 
 
-class AppDeployRunner:
+class AppDeployRunner(Log):
     """
     Executes the deployment of a single app
     """
 
     def __init__(self, root_config: ProjectConfig, app_config: AppConfig, mode: RunMode = RunMode()):
+        super().__init__()
         self._root_config = root_config
         self._app_config = app_config
         self._bundle = DeploymentBundle(self._root_config.get_pre_processor())
@@ -90,7 +92,7 @@ class AppDeployRunner:
         if self._mode.dry_run:
             return
 
-        print('Checking ' + self._app_config.get_dc_name())
+        self.log.info('Checking ' + self._app_config.get_dc_name())
         object_deployer = OcObjectDeployer(self._root_config, oc, self._app_config, mode=self._mode)
         self._bundle.deploy(object_deployer)
 
@@ -103,7 +105,7 @@ class AppDeployRunner:
             if not template.is_template():
                 raise ValueError('Referenced app ' + template_name + ' is not declared as template')
             if not template.enabled():
-                print('Warning: Template ' + template_name + ' is disabled, skipping')
+                self.log.info('Warning: Template ' + template_name + ' is disabled, skipping')
                 return
 
             child_template_processor = YmlTemplateProcessor(template)

@@ -123,9 +123,10 @@ This will create a new configmap from the file `nginx.conf` with the name `nginx
 Any changes made to the file will be automatically deployed.
 
 ### Variables
-You can refer to variables in yml files by using `${VAR-NAME}`.
-Variables can also be loaded from files.
+You can refer to variables in yml files by using `${VAR-NAME}`. Variables can also be loaded from files.
+
 ```yml
+# _index.yml
 vars:
   # Regular key/value assignment
   key: value
@@ -138,6 +139,29 @@ vars:
     file: my-cert.pem
 ```
 
+It is also possible to decorate objects using variables:
+```yml
+# _index.yml
+vars:
+  someMerging:
+    hello: world
+    replicas: 2
+```
+
+```yml
+# dc.yml
+spec:
+  replicas: 1
+  _ok8merge: ${someMerging}
+```
+
+Results in:
+```yml
+spec:
+  replicas: 2
+  hello: world
+```
+
 ### Global variables
 The following variables are available anywhere inside the yml files by default
 
@@ -147,7 +171,7 @@ The following variables are available anywhere inside the yml files by default
 | `OC_PROJECT` | Name of the openshift project in `_root.yml` |
 
 ### Templates
-You can use templates to reuse and generate yml files for openshift.
+You can use templates to reuse and generate yml files.
 To do so you create a new app with the `type` field set to `template`.
 Other apps can now refer to this template via the `applyTemplates` or `postApplyTemplates` field. 
 Templates can refer to other templates (recursively). Any vars defined are passed to the next template. 
@@ -318,5 +342,4 @@ dc:
 
 
 ## Contribute
-The code should be mostly commented, although I didn't bother implementing proper logging and other utils stuff.
-If you found a bug or want to improve something feel free to open an issue and discuss your ideas.
+The code should be mostly commented. If you found a bug or want to improve something feel free to open an issue and discuss your ideas.

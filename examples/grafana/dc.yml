@@ -32,20 +32,6 @@ spec:
             - name: grafana-data-volume
               mountPath: /var/lib/grafana
 
-          readinessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 15
-            timeoutSeconds: 1
-
-          livenessProbe:
-            httpGet:
-              path: /
-              port: 3000
-            initialDelaySeconds: 15
-            timeoutSeconds: 1
-
       volumes:
         - name: grafana-data-volume
           persistentVolumeClaim:
