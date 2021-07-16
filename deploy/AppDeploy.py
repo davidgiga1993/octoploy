@@ -86,14 +86,14 @@ class AppDeployRunner(Log):
         self._deploy_extra_configmaps(template_processor)
         self._deploy_templates(self._app_config.get_post_template_refs(), template_processor)
 
-        oc = self._root_config.create_oc()
+        k8api = self._root_config.create_oc()
         if self._mode.out_file is not None:
             self._bundle.dump_objects(self._mode.out_file)
         if self._mode.dry_run:
             return
 
         self.log.info('Checking ' + self._app_config.get_dc_name())
-        object_deployer = OcObjectDeployer(self._root_config, oc, self._app_config, mode=self._mode)
+        object_deployer = OcObjectDeployer(self._root_config, k8api, self._app_config, mode=self._mode)
         self._bundle.deploy(object_deployer)
 
     def _deploy_templates(self, template_names: List[str], template_processor: YmlTemplateProcessor):
@@ -105,7 +105,7 @@ class AppDeployRunner(Log):
             if not template.is_template():
                 raise ValueError('Referenced app ' + template_name + ' is not declared as template')
             if not template.enabled():
-                self.log.info('Warning: Template ' + template_name + ' is disabled, skipping')
+                self.log.warning('Template ' + template_name + ' is disabled, skipping')
                 return
 
             child_template_processor = YmlTemplateProcessor(template)

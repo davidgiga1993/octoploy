@@ -4,12 +4,14 @@ import re
 from typing import Optional, Dict, List, Set
 from typing import TYPE_CHECKING
 
+from utils.Log import Log
+
 if TYPE_CHECKING:
     from config.BaseConfig import BaseConfig
 from utils.Errors import MissingParam
 
 
-class YmlTemplateProcessor:
+class YmlTemplateProcessor(Log):
     """
     Processes yml files by replacing any string placeholders.
     """
@@ -18,6 +20,7 @@ class YmlTemplateProcessor:
     KEY_FIELD_MERGE: str = '_ok8merge'
 
     def __init__(self, config: BaseConfig):
+        super().__init__()
         self._missing_vars = []  # type: List[str]
         """
         List of all variables which have not been replace because
@@ -48,7 +51,7 @@ class YmlTemplateProcessor:
                 for variable_name in self.VAR_PATTERN.findall(value):
                     new_value = replacements.get(variable_name)
                     if new_value is None:
-                        print('Warn: Missing referenced variable: ' + variable_name)
+                        self.log.warning('Missing referenced variable: ' + variable_name)
                         continue
                     if value == '${' + variable_name + '}':
                         # Replace the entire value since the replacement value only consists of the ${} tag
@@ -72,13 +75,13 @@ class YmlTemplateProcessor:
                 missing_params.append(missing)
             if len(missing_params) > 0:
                 raise MissingParam('The following params are not defined: ' + str(missing_params))
-            print('Warning: The following vars are not defined: ' + str(self._missing_vars))
+            self.log.warning('The following vars are not defined: ' + str(self._missing_vars))
 
         self._sanity_check(data)
 
     def _sanity_check(self, data: Dict[str, any]):
         if '${' in str(data):
-            print('Warning: At least one variable could not been resolved: ' + str(data))
+            self.log.warning('At least one variable could not been resolved: ' + str(data))
 
     def _get_params(self) -> Set[str]:
         """

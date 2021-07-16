@@ -14,7 +14,7 @@ class OcObjectDeployer(Log):
 
     HASH_ANNOTATION = 'yml-hash'
 
-    def __init__(self, root_config: ProjectConfig, oc: Oc, app_config: AppConfig, mode: RunMode = RunMode()):
+    def __init__(self, root_config: ProjectConfig, oc: K8Api, app_config: AppConfig, mode: RunMode = RunMode()):
         super().__init__()
         self._root_config = root_config  # type: ProjectConfig
         self._app_config = app_config  # type: AppConfig
@@ -57,7 +57,7 @@ class OcObjectDeployer(Log):
             return
 
         if self._mode.plan:
-            self.log.info('Update required for ' + item_name)
+            self.log.warning('Update required for ' + item_name)
             return
 
         self.log.info('Applying update ' + item_name + ' (item has changed)')

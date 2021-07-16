@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import logging
 import os
 
 from config.Config import ProjectConfig, RunMode
@@ -9,6 +8,7 @@ from deploy.AppDeploy import AppDeployment
 from utils.Log import Log
 
 log_instance = Log('Ok8Deploy')
+
 
 def reload_config(args):
     root_config = ProjectConfig.load(args.config_dir)
@@ -124,9 +124,6 @@ def main():
         parser.print_help()
         exit(1)
         return
-
-    # Setup logging
-    logging.basicConfig(level=logging.INFO, format='%(levelname)-.1s %(asctime)-.19s [%(name)s] %(message)s')
 
     args.func(args)
 
