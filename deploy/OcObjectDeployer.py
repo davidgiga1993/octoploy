@@ -53,7 +53,7 @@ class OcObjectDeployer(Log):
             return
 
         if current_hash == hash_val:
-            self.log.info('No change in ' + item_name)
+            self.log.debug('No change in ' + item_name)
             return
 
         if self._mode.plan:
