@@ -14,7 +14,7 @@ class YmlTemplateProcessor:
     Processes yml files by replacing any string placeholders.
     """
 
-    VAR_PATTERN = re.compile(r'\${(.+)}')
+    VAR_PATTERN = re.compile(r'\${(.+?)}')
     KEY_FIELD_MERGE: str = '_ok8merge'
 
     def __init__(self, config: BaseConfig):
