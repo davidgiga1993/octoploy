@@ -45,6 +45,9 @@ class YmlTemplateProcessor(Log):
             found_var = False
             for key, value in replacements.items():
                 if not isinstance(value, str):
+                    # A replacement might be an object
+                    # So we need to walk though every item and see if there is someting to replace
+                    self._walk_dict(replacements, value)
                     continue
 
                 # The replacement value might refer to another variable
@@ -109,7 +112,7 @@ class YmlTemplateProcessor(Log):
             replacements.update(self._child._get_replacements())
         return replacements
 
-    def _walk_dict(self, replacements: Dict[str, any], data: dict):
+    def _walk_dict(self, replacements: Dict[str, any], data: dict) -> Dict[str, any]:
         """
         Walks through all items in the dict and replaces any known variables
 
