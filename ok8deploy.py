@@ -85,6 +85,7 @@ def deploy_all(args):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--debug', dest='debug', action='store_true')
     parser.add_argument('--config-dir', dest='config_dir', help='Path to the folder containing all configurations',
                         default='../configs')
 
@@ -124,6 +125,9 @@ def main():
         parser.print_help()
         exit(1)
         return
+
+    if args.debug:
+        Log.set_debug()
 
     args.func(args)
 

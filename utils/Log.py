@@ -25,6 +25,8 @@ class ColorFormatter(logging.Formatter):
 
 
 class Log:
+    log_level = logging.INFO
+
     def __init__(self, name: str = None):
         if not hasattr(self, 'log'):
             if name is None:
@@ -34,5 +36,9 @@ class Log:
                 handler = logging.StreamHandler(stream=sys.stdout)
                 handler.setFormatter(ColorFormatter())
                 log.addHandler(handler)
-                log.setLevel(logging.INFO)
+                log.setLevel(Log.log_level)
             self.log = log
+
+    @classmethod
+    def set_debug(cls):
+        cls.log_level = logging.DEBUG
