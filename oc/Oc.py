@@ -179,11 +179,15 @@ class Oc(K8Api):
         args.insert(0, self._get_bin())
         if print_out:
             print(str(args))
+
+        stdin_bytes = None
         if stdin is not None:
-            stdin = stdin.encode('utf-8')
-        result = subprocess.run(args, capture_output=True, input=stdin)
+            stdin_bytes = stdin.encode('utf-8')
+        result = subprocess.run(args, capture_output=True, input=stdin_bytes)
         if result.returncode != 0:
-            raise Exception('oc failed: ' + str(result.stderr.decode('utf-8')))
+            if stdin is not None:
+                print(stdin.replace('\\n', '\n'))
+            raise Exception('Failed: ' + str(result.stderr.decode('utf-8')))
         output = result.stdout.decode('utf-8')
         if print_out:
             print(output)

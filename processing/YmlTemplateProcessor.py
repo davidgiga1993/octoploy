@@ -123,7 +123,10 @@ class YmlTemplateProcessor(Log):
             obj = data[key]
             if key == self.KEY_FIELD_MERGE:
                 del data[key]
-                data.update(self._walk_item(replacements, obj))
+                new_dict = self._walk_item(replacements, obj)
+                if isinstance(new_dict, str):
+                    raise ValueError('No replacement found for ' + new_dict)
+                data.update(new_dict)
                 continue
 
             data[key] = self._walk_item(replacements, obj, data, key)
