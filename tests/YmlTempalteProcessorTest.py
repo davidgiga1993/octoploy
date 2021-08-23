@@ -1,7 +1,7 @@
 from unittest import TestCase, mock
 
-from config.Config import AppConfig
-from processing.YmlTemplateProcessor import YmlTemplateProcessor
+from ok8deploy.config.Config import AppConfig
+from ok8deploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 
 
 class YmlTemplateProcessorTest(TestCase):

@@ -3,9 +3,9 @@ from unittest import TestCase
 
 import yaml
 
-from config.Config import ProjectConfig, RunMode
-from deploy.AppDeploy import AppDeployment
-from utils.Errors import MissingParam
+from ok8deploy.config.Config import ProjectConfig, RunMode
+from ok8deploy.deploy.AppDeploy import AppDeployment
+from ok8deploy.utils.Errors import MissingParam
 
 
 class AppDeploymentTest(TestCase):

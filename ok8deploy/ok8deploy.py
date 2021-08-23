@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import argparse
-import os
 
-from config.Config import ProjectConfig, RunMode
-from deploy.AppDeploy import AppDeployment
-from utils.Log import Log
+from ok8deploy.config.Config import ProjectConfig, RunMode
+from ok8deploy.deploy.AppDeploy import AppDeployment
+from ok8deploy.utils.Log import Log
 
 log_instance = Log('Ok8Deploy')
 
@@ -38,21 +37,9 @@ def _run_app_deploy(config_dir: str, app_name: str, mode: RunMode):
 
 def _run_apps_deploy(config_dir: str, mode: RunMode):
     root_config = ProjectConfig.load(config_dir)
-    for dir_item in os.listdir(config_dir):
-        path = os.path.join(config_dir, dir_item)
-        if not os.path.isdir(path):
-            continue
-
-        try:
-            app_config = root_config.load_app_config(dir_item)
-        except FileNotFoundError:
-            # Index file missing
-            continue
-
-        if app_config.is_template() or not app_config.enabled():
-            # Silently skip
-            continue
-
+    configs = root_config.load_app_configs()
+    log_instance.log.info(f'Got {len(configs)} configs')
+    for app_config in configs:
         AppDeployment(root_config, app_config, mode).deploy()
     log_instance.log.info('Done')
 

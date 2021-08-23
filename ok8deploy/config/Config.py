@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import os
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 
-from config.AppConfig import AppConfig
-from config.BaseConfig import BaseConfig
-from oc.Oc import Oc, K8, K8Api
-from processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
-from processing.YmlTemplateProcessor import YmlTemplateProcessor
-from utils.Errors import ConfigError
+from ok8deploy.config.AppConfig import AppConfig
+from ok8deploy.config.BaseConfig import BaseConfig
+from ok8deploy.oc.Oc import Oc, K8, K8Api
+from ok8deploy.processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
+from ok8deploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
+from ok8deploy.utils.Errors import ConfigError
 
 
 class RunMode:
@@ -124,6 +124,30 @@ class ProjectConfig(BaseConfig):
             items.update({
                 'OC_PROJECT': name
             })
+        return items
+
+    def load_app_configs(self) -> List[AppConfig]:
+        """
+        Loads all app configurations available in this project
+        :return:
+        """
+        items = []
+        for dir_item in os.listdir(self._config_root):
+            path = os.path.join(self._config_root, dir_item)
+            if not os.path.isdir(path):
+                continue
+            try:
+                app_config = self.load_app_config(dir_item)
+            except FileNotFoundError:
+                # Index file missing
+                continue
+
+            if app_config.is_template() or not app_config.enabled():
+                # Silently skip
+                continue
+            items.append(app_config)
+        if self._library is not None:
+            items.extend(self._library.load_app_configs())
         return items
 
     def load_app_config(self, name: str) -> AppConfig:

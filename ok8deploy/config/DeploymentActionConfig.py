@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from utils.Log import Log
+from ok8deploy.utils.Log import Log
 
 if TYPE_CHECKING:
-    from config.Config import AppConfig
+    from ok8deploy.config.Config import AppConfig
 
-from oc.Oc import K8Api
+from ok8deploy.oc.Oc import K8Api
 
 
 class DeploymentActionConfig(Log):

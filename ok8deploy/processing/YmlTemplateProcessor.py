@@ -4,11 +4,11 @@ import re
 from typing import Optional, Dict, List, Set
 from typing import TYPE_CHECKING
 
-from utils.Log import Log
+from ok8deploy.utils.Log import Log
 
 if TYPE_CHECKING:
-    from config.BaseConfig import BaseConfig
-from utils.Errors import MissingParam
+    from ok8deploy.config.BaseConfig import BaseConfig
+from ok8deploy.utils.Errors import MissingParam
 
 
 class YmlTemplateProcessor(Log):
@@ -44,10 +44,12 @@ class YmlTemplateProcessor(Log):
         while depth < 10 and found_var:  # Lazily assume there are only 10 levels of chained reference
             found_var = False
             for key, value in replacements.items():
-                if not isinstance(value, str):
+                if isinstance(value, dict):
                     # A replacement might be an object
                     # So we need to walk though every item and see if there is someting to replace
                     self._walk_dict(replacements, value)
+                    continue
+                if not isinstance(value, str):
                     continue
 
                 # The replacement value might refer to another variable

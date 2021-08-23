@@ -4,7 +4,7 @@ import subprocess
 from abc import abstractmethod
 from typing import Optional, List
 
-from oc.Model import ItemDescription, PodData
+from ok8deploy.oc.Model import ItemDescription, PodData
 
 
 class K8Api:

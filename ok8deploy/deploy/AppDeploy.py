@@ -5,11 +5,11 @@ from typing import List
 
 import yaml
 
-from config.Config import ProjectConfig, AppConfig, RunMode
-from deploy.DeploymentBundle import DeploymentBundle
-from deploy.OcObjectDeployer import OcObjectDeployer
-from processing.YmlTemplateProcessor import YmlTemplateProcessor
-from utils.Log import Log
+from ok8deploy.config.Config import ProjectConfig, AppConfig, RunMode
+from ok8deploy.deploy.DeploymentBundle import DeploymentBundle
+from ok8deploy.deploy.OcObjectDeployer import OcObjectDeployer
+from ok8deploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
+from ok8deploy.utils.Log import Log
 
 
 class AppDeployment:

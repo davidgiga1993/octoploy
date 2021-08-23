@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from utils.DictUtils import DictUtils
+from ok8deploy.utils.DictUtils import DictUtils
 
 
 class DictUtilsTest(TestCase):
