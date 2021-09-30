@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='ok8deploy',
-    version='1.0.3',
+    version='1.0.4',
     author='davidgiga1993',
     author_email='david@dev-core.org',
     description='Simple Openshift / K8 template engine with state tracking',

@@ -40,7 +40,14 @@ class OcObjectDeployer(Log):
         str_repr = yaml.dump(data, sort_keys=True)
 
         hash_val = hashlib.md5(str_repr.encode('utf-8')).hexdigest()
-        item_name = data['kind'] + '/' + data['metadata']['name']
+        metadata = data['metadata']
+
+        # An object might be in a different namespace than the current context
+        namespace = metadata.get('namespace')
+        if namespace is not None:
+            self._oc.project(namespace)
+
+        item_name = data['kind'] + '/' + metadata['name']
         description = self._oc.get(item_name)
         current_hash = None
         if description is not None:
@@ -63,6 +70,10 @@ class OcObjectDeployer(Log):
         self.log.info('Applying update ' + item_name + ' (item has changed)')
         self._oc.apply(str_repr)
         self._oc.annotate(item_name, 'yml-hash', hash_val)
+
+        if namespace is not None:
+            # Use project namespace as default again
+            self._oc.project(self._root_config.get_oc_project_name())
 
         item_kind = data['kind'].lower()
         if item_kind == 'ConfigMap'.lower():

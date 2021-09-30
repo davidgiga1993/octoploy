@@ -34,10 +34,7 @@ class DeploymentBundle(Log):
         if item_kind == 'Secret'.lower():
             self.log.info('Secrets are ignored')
             return
-        if item_kind == 'PersistentVolumeClaim'.lower():
-            self.log.info("PVCs are ignored")
-            return
-
+        
         # Pre-process any variables
         if template_processor is not None:
             template_processor.process(data)

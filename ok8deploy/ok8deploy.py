@@ -73,8 +73,9 @@ def deploy_all(args):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', dest='debug', action='store_true')
-    parser.add_argument('--config-dir', dest='config_dir', help='Path to the folder containing all configurations',
-                        default='../configs')
+    parser.add_argument('-c', '--config-dir', dest='config_dir',
+                        help='Path to the folder containing all configurations',
+                        default='configs')
 
     subparsers = parser.add_subparsers(help='Commands')
     reload_parser = subparsers.add_parser('reload', help='Reloads the configuration of a running application')
@@ -86,7 +87,7 @@ def main():
     plan_parser.set_defaults(func=plan_app)
 
     plan_all_parser = subparsers.add_parser('plan-all',
-                                            help='Verifies what changes have to be applied for a single app')
+                                            help='Verifies what changes have to be applied for all apps')
     plan_all_parser.set_defaults(func=plan_all)
 
     deploy_parser = subparsers.add_parser('deploy', help='Deploys the configuration of an application')

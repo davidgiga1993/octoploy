@@ -68,10 +68,13 @@ class ProjectConfig(BaseConfig):
         """
         Returns the pre processor for the current config
         """
-        mode = self.data.get('mode', 'oc')
+        mode = self._get_mode()
         if mode == 'k8':
             return OcToK8PreProcessor()
         return DataPreProcessor()
+
+    def _get_mode(self) -> str:
+        return self.data.get('mode', 'oc')
 
     def create_oc(self) -> K8Api:
         """
@@ -81,7 +84,7 @@ class ProjectConfig(BaseConfig):
         if self._oc is not None:
             return self._oc
 
-        mode = self.data.get('mode', 'oc')
+        mode = self._get_mode()
         if mode == 'oc':
             oc = Oc()
         elif mode == 'k8':

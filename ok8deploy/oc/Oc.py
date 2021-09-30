@@ -5,9 +5,13 @@ from abc import abstractmethod
 from typing import Optional, List
 
 from ok8deploy.oc.Model import ItemDescription, PodData
+from ok8deploy.utils.Log import Log
 
 
-class K8Api:
+class K8Api(Log):
+    def __init__(self):
+        super().__init__('K8Api')
+
     @abstractmethod
     def tag(self, source: str, dest: str):
         """
@@ -183,6 +187,8 @@ class Oc(K8Api):
         stdin_bytes = None
         if stdin is not None:
             stdin_bytes = stdin.encode('utf-8')
+
+        self.log.debug('Executing ' + str(args))
         result = subprocess.run(args, capture_output=True, input=stdin_bytes)
         if result.returncode != 0:
             if stdin is not None:
@@ -215,7 +221,8 @@ class K8(Oc):
         self._exec(['config', 'use-context', context])
 
     def _exec(self, args, print_out: bool = False, stdin: str = None):
-        args.append('--namespace=' + self._namespace)
+        if self._namespace != '':
+            args.append('--namespace=' + self._namespace)
         return super()._exec(args, print_out, stdin)
 
     def _get_bin(self) -> str:
