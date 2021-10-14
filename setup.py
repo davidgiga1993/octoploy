@@ -13,6 +13,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/davidgiga1993/OpenK8Deploy',
     packages=setuptools.find_packages(),
+    install_requires=['pyyaml'],
     entry_points={
         'console_scripts': ['ok8deploy=ok8deploy.ok8deploy:main'],
     },
