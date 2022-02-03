@@ -30,7 +30,7 @@ with their associate values and merging referenced templates.
 Deploys all enabled app
 
 ```
-python deploy.py deploy-all
+octoploy deploy-all
 ```
 
 ### Deploy single app
@@ -38,7 +38,7 @@ python deploy.py deploy-all
 Deploys all object of the app with the give name
 
 ```
-python deploy.py deploy nginx
+octoploy deploy nginx
 ```
 
 ### Reload config
@@ -46,7 +46,7 @@ python deploy.py deploy nginx
 This command executes the `on-config-change` trigger
 
 ```
-python deploy.py reload prometheus
+octoploy reload prometheus
 ```
 
 ### Config structure
