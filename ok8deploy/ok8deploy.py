@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 
+from ok8deploy.backup.BackupGenerator import BackupGenerator
 from ok8deploy.config.Config import ProjectConfig, RunMode
 from ok8deploy.deploy.AppDeploy import AppDeployment
 from ok8deploy.utils.Log import Log
@@ -9,8 +10,22 @@ from ok8deploy.utils.Log import Log
 log_instance = Log('Ok8Deploy')
 
 
+def load_project(config_dir: str) -> ProjectConfig:
+    if config_dir != '':
+        return ProjectConfig.load(config_dir)
+
+    # No path specified, try a few common ones
+    paths = ['.', 'configs', 'octoploy']
+    for path in paths:
+        try:
+            return ProjectConfig.load(path)
+        except FileNotFoundError:
+            continue
+    raise FileNotFoundError(f'Did not find config in any of {paths}')
+
+
 def reload_config(args):
-    root_config = ProjectConfig.load(args.config_dir)
+    root_config = load_project(args.config_dir)
     app_config = root_config.load_app_config(args.name[0])
     if not app_config.enabled():
         log_instance.log.error('App is disabled')
@@ -28,7 +43,7 @@ def reload_config(args):
 
 
 def _run_app_deploy(config_dir: str, app_name: str, mode: RunMode):
-    root_config = ProjectConfig.load(config_dir)
+    root_config = load_project(config_dir)
     app_config = root_config.load_app_config(app_name)
     deployment = AppDeployment(root_config, app_config, mode)
     deployment.deploy()
@@ -36,7 +51,7 @@ def _run_app_deploy(config_dir: str, app_name: str, mode: RunMode):
 
 
 def _run_apps_deploy(config_dir: str, mode: RunMode):
-    root_config = ProjectConfig.load(config_dir)
+    root_config = load_project(config_dir)
     configs = root_config.load_app_configs()
     log_instance.log.info(f'Got {len(configs)} configs')
     for app_config in configs:
@@ -70,14 +85,23 @@ def deploy_all(args):
     _run_apps_deploy(args.config_dir, mode)
 
 
+def create_backup(args):
+    root_config = load_project(args.config_dir)
+    BackupGenerator(root_config).create_backup(args.name[0])
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', dest='debug', action='store_true')
     parser.add_argument('-c', '--config-dir', dest='config_dir',
                         help='Path to the folder containing all configurations',
-                        default='configs')
+                        default='')
 
     subparsers = parser.add_subparsers(help='Commands')
+    backup_parser = subparsers.add_parser('backup', help='Creates a backup of all resources in the cluster')
+    backup_parser.add_argument('name', help='Name of the backup folder', nargs=1)
+    backup_parser.set_defaults(func=create_backup)
+
     reload_parser = subparsers.add_parser('reload', help='Reloads the configuration of a running application')
     reload_parser.add_argument('name', help='Name of the app which should be reloaded (folder name)', nargs=1)
     reload_parser.set_defaults(func=reload_config)

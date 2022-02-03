@@ -21,6 +21,12 @@ class K8Api(Log):
         """
         raise NotImplemented
 
+    def get_namespaces(self) -> List[str]:
+        """
+        Returns all namespaces
+        :return: Namespaces
+        """
+
     @abstractmethod
     def get(self, name: str) -> Optional[ItemDescription]:
         """
@@ -106,6 +112,10 @@ class K8Api(Log):
 
 
 class Oc(K8Api):
+    def get_namespaces(self) -> List[str]:
+        lines = self._exec(['get', 'namespaces', '-o', 'name'])
+        return lines.splitlines()
+
     def tag(self, source: str, dest: str):
         self._exec(['tag', source, dest], print_out=True)
 
