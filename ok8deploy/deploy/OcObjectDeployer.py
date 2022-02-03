@@ -2,9 +2,9 @@ import hashlib
 
 import yaml
 
-from ok8deploy.config.Config import ProjectConfig, AppConfig, RunMode
-from ok8deploy.oc.Oc import K8Api
-from ok8deploy.utils.Log import Log
+from octoploy.config.Config import ProjectConfig, AppConfig, RunMode
+from octoploy.oc.Oc import K8Api
+from octoploy.utils.Log import Log
 
 
 class OcObjectDeployer(Log):

@@ -4,11 +4,11 @@ import re
 from typing import Optional, Dict, List, Set
 from typing import TYPE_CHECKING
 
-from ok8deploy.utils.Log import Log
+from octoploy.utils.Log import Log
 
 if TYPE_CHECKING:
-    from ok8deploy.config.BaseConfig import BaseConfig
-from ok8deploy.utils.Errors import MissingParam
+    from octoploy.config.BaseConfig import BaseConfig
+from octoploy.utils.Errors import MissingParam
 
 
 class YmlTemplateProcessor(Log):

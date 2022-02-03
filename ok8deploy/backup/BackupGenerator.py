@@ -1,7 +1,7 @@
 import os
 
-from ok8deploy.config.Config import ProjectConfig
-from ok8deploy.utils.Log import Log
+from octoploy.config.Config import ProjectConfig
+from octoploy.utils.Log import Log
 
 
 class BackupGenerator(Log):

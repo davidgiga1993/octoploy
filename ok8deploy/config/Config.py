@@ -3,12 +3,12 @@ from __future__ import annotations
 import os
 from typing import Optional, Dict, List
 
-from ok8deploy.config.AppConfig import AppConfig
-from ok8deploy.config.BaseConfig import BaseConfig
-from ok8deploy.oc.Oc import Oc, K8, K8Api
-from ok8deploy.processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
-from ok8deploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
-from ok8deploy.utils.Errors import ConfigError
+from octoploy.config.AppConfig import AppConfig
+from octoploy.config.BaseConfig import BaseConfig
+from octoploy.oc.Oc import Oc, K8, K8Api
+from octoploy.processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
+from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
+from octoploy.utils.Errors import ConfigError
 
 
 class RunMode:

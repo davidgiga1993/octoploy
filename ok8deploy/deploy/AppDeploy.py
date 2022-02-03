@@ -5,11 +5,11 @@ from typing import List
 
 import yaml
 
-from ok8deploy.config.Config import ProjectConfig, AppConfig, RunMode
-from ok8deploy.deploy.DeploymentBundle import DeploymentBundle
-from ok8deploy.deploy.OcObjectDeployer import OcObjectDeployer
-from ok8deploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
-from ok8deploy.utils.Log import Log
+from octoploy.config.Config import ProjectConfig, AppConfig, RunMode
+from octoploy.deploy.DeploymentBundle import DeploymentBundle
+from octoploy.deploy.OcObjectDeployer import OcObjectDeployer
+from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
+from octoploy.utils.Log import Log
 
 
 class AppDeployment:

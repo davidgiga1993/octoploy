@@ -4,11 +4,11 @@ import os
 
 import yaml
 
-from ok8deploy.deploy.OcObjectDeployer import OcObjectDeployer
-from ok8deploy.processing.DataPreProcessor import DataPreProcessor
-from ok8deploy.processing.OcObjectMerge import OcObjectMerge
-from ok8deploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
-from ok8deploy.utils.Log import Log
+from octoploy.deploy.OcObjectDeployer import OcObjectDeployer
+from octoploy.processing.DataPreProcessor import DataPreProcessor
+from octoploy.processing.OcObjectMerge import OcObjectMerge
+from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
+from octoploy.utils.Log import Log
 
 
 class DeploymentBundle(Log):

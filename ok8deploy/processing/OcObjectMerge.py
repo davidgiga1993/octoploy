@@ -1,8 +1,8 @@
 from typing import Dict
 
-from ok8deploy.oc.Model import DeploymentConfig, NamedItem
-from ok8deploy.utils.DictUtils import DictUtils
-from ok8deploy.utils.Log import Log
+from octoploy.oc.Model import DeploymentConfig, NamedItem
+from octoploy.utils.DictUtils import DictUtils
+from octoploy.utils.Log import Log
 
 
 class OcObjectMerge(Log):

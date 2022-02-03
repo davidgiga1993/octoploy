@@ -2,7 +2,7 @@ from unittest import TestCase
 
 import yaml
 
-from ok8deploy.processing.OcObjectMerge import OcObjectMerge
+from octoploy.processing.OcObjectMerge import OcObjectMerge
 
 
 class OcObjectMergeTest(TestCase):

@@ -1,9 +1,9 @@
 import os
 from typing import Dict, List, Optional
 
-from ok8deploy.config.YmlConfig import YmlConfig
-from ok8deploy.processing.ValueLoader import ValueLoaderFactory
-from ok8deploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
+from octoploy.config.YmlConfig import YmlConfig
+from octoploy.processing.ValueLoader import ValueLoaderFactory
+from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 
 
 class BaseConfig(YmlConfig):

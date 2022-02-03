@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import argparse
 
-from ok8deploy.backup.BackupGenerator import BackupGenerator
-from ok8deploy.config.Config import ProjectConfig, RunMode
-from ok8deploy.deploy.AppDeploy import AppDeployment
-from ok8deploy.utils.Log import Log
+from octoploy.backup.BackupGenerator import BackupGenerator
+from octoploy.config.Config import ProjectConfig, RunMode
+from octoploy.deploy.AppDeploy import AppDeployment
+from octoploy.utils.Log import Log
 
-log_instance = Log('Ok8Deploy')
+log_instance = Log('octoploy')
 
 
 def load_project(config_dir: str) -> ProjectConfig:

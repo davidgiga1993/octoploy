@@ -4,8 +4,8 @@ import subprocess
 from abc import abstractmethod
 from typing import Optional, List
 
-from ok8deploy.oc.Model import ItemDescription, PodData
-from ok8deploy.utils.Log import Log
+from octoploy.oc.Model import ItemDescription, PodData
+from octoploy.utils.Log import Log
 
 
 class K8Api(Log):

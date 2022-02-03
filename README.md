@@ -32,7 +32,7 @@ python deploy.py reload prometheus
 
 
 ## Configuration
-In OK8Deploy you define apps, each app can contain multiple yml files.
+In octoploy you define apps, each app can contain multiple yml files.
 Additionally, there is a project configuration which describes the openshift project.
 
 All yml files will be pre-processed before they will be imported.

@@ -1,4 +1,4 @@
-from ok8deploy import ok8deploy
+from octoploy import octoploy
 
 if __name__ == '__main__':
-    ok8deploy.main()
+    octoploy.main()

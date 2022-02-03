@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Dict, Optional
 
-from ok8deploy.utils.DictUtils import DictUtils
+from octoploy.utils.DictUtils import DictUtils
 
 
 class NamedItem:

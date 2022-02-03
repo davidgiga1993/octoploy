@@ -1,4 +1,4 @@
-from ok8deploy.utils.DictUtils import DictUtils
+from octoploy.utils.DictUtils import DictUtils
 
 
 class DataPreProcessor:

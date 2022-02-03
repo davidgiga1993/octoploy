@@ -5,9 +5,9 @@ from typing import Dict
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ok8deploy.config.BaseConfig import BaseConfig
-from ok8deploy.utils.Cert import Cert
-from ok8deploy.utils.Errors import ConfigError
+    from octoploy.config.BaseConfig import BaseConfig
+from octoploy.utils.Cert import Cert
+from octoploy.utils.Errors import ConfigError
 
 
 class ValueLoader:

@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from typing import List, Optional, Dict
 
-from ok8deploy.config.BaseConfig import BaseConfig
-from ok8deploy.config.ConfigMap import ConfigMap
-from ok8deploy.config.DeploymentActionConfig import DeploymentActionConfig
-from ok8deploy.utils.DictUtils import DictUtils
-from ok8deploy.utils.Errors import MissingVar
+from octoploy.config.BaseConfig import BaseConfig
+from octoploy.config.ConfigMap import ConfigMap
+from octoploy.config.DeploymentActionConfig import DeploymentActionConfig
+from octoploy.utils.DictUtils import DictUtils
+from octoploy.utils.Errors import MissingVar
 
 
 class AppConfig(BaseConfig):
