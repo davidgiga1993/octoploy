@@ -166,7 +166,7 @@ vars:
 # dc.yml
 spec:
   replicas: 1
-  _ok8merge: ${someMerging}
+  _merge: ${someMerging}
 ```
 
 Results in:

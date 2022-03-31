@@ -76,7 +76,7 @@ vars:
         proc = YmlTemplateProcessor(app_config)
         data = {'root': {
             'item': '${DC_NAME}',
-            '_ok8merge': '${MERGE_OBJ}',
+            '_merge': '${MERGE_OBJ}',
         }}
         proc.process(data)
         self.assertEqual('hello', data['root']['item'])
