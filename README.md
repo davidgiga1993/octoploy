@@ -143,23 +143,16 @@ will be automatically deployed.
 
 ### Variables
 
-You can refer to variables in yml files by using `${VAR-NAME}`. Variables can also be loaded from files.
+You can refer to variables in yml files by using `${VAR-NAME}`. Variables can also be loaded from files (see loaders below).
 
 ```yml
 # _index.yml
 vars:
   # Regular key/value assignment
   key: value
-
-  # This will load the public/private and intermediate certs
-  # from a pem file and store it in *_KEY, *_PUBLIC, *_CACERT
-  # where * is the key of the value (CERT in this example)
-  CERT:
-    loader: pem
-    file: my-cert.pem
 ```
 
-It is also possible to decorate objects using variables:
+It is also possible to decorate objects using variables and merge them into other objects:
 
 ```yml
 # _index.yml
@@ -193,6 +186,34 @@ The following variables are available anywhere inside the yml files by default
 | `DC_NAME` | Name of the deployment-config in the `_index.yml` |
 | `OC_PROJECT` | Name of the openshift project in `_root.yml` |
 
+### Value Loaders
+You can load values from various sources using value loaders
+```yml
+vars:
+  # This will load the public/private and intermediate certs
+  # from a pem file and store it in *_KEY, *_PUBLIC, *_CACERT
+  # where * is the key of the value.
+  # In this example: CERT_KEY, CERT_PUBLIC, CERT_CACERT
+  CERT:
+    loader: pem
+    file: my-cert.pem
+  
+  # Load the content of a file into "MY_FILE"
+  MY_FILE:
+    loader: file
+    file: someFile.bin
+    # Optional: Defines in which encoding the file content should be read
+    # utf-8 by default, only applicable if "conversion" is not set.
+    encoding: utf-8
+    
+    # Optional: Conversion can be used to convert a binary file 
+    # into a string representation, in this base base64 
+    conversion: base64
+
+  # Load the content of environment variables into ENV_*
+  ENV:
+    loader: env
+ ```
 ### Templates
 
 You can use templates to reuse and generate yml files. To do so you create a new app with the `type` field set

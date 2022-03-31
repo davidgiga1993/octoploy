@@ -1,7 +1,9 @@
 from __future__ import annotations
+
+import base64
+import os
 from abc import abstractmethod
 from typing import Dict
-
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -17,6 +19,30 @@ class ValueLoader:
     @abstractmethod
     def load(self, data: Dict) -> Dict[str, str]:
         pass
+
+
+class EnvLoader(ValueLoader):
+
+    def load(self, data: Dict) -> Dict[str, str]:
+        return dict(os.environ)
+
+
+class FileLoader(ValueLoader):
+
+    def load(self, data: Dict) -> Dict[str, str]:
+        file = data['file']
+        encoding = data.get('encoding', 'utf-8')
+        conversion = data.get('conversion')
+
+        with open(file, 'rb') as f:
+            content = f.read()
+
+        if conversion is not None:
+            if conversion == 'base64':
+                return {'': base64.b64encode(content).decode('utf-8')}
+            raise ValueError(f'Unknown conversion {conversion}')
+
+        return {'': content.decode(encoding)}
 
 
 class PemLoader(ValueLoader):
@@ -37,4 +63,8 @@ class ValueLoaderFactory:
     def create(config: BaseConfig, loader_name: str) -> ValueLoader:
         if loader_name == 'pem':
             return PemLoader(config)
+        if loader_name == 'file':
+            return FileLoader(config)
+        if loader_name == 'env':
+            return EnvLoader(config)
         raise ConfigError('Unknown loader ' + loader_name)
