@@ -5,7 +5,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='octoploy',
-    version='1.0.6',
+    version='1.0.7',
     author='davidgiga1993',
     author_email='david@dev-core.org',
     description='Simple kubernetes / openshift templating engine with state tracking, backups and more',
