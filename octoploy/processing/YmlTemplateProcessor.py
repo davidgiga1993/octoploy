@@ -17,7 +17,7 @@ class YmlTemplateProcessor(Log):
     """
 
     VAR_PATTERN = re.compile(r'\${(.+?)}')
-    KEY_FIELD_MERGE: str = '_ok8merge'
+    KEY_FIELD_MERGE: str = '_merge'
 
     def __init__(self, config: BaseConfig):
         super().__init__()
