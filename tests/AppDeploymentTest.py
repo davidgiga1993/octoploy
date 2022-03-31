@@ -21,6 +21,17 @@ class AppDeploymentTest(TestCase):
         if os.path.isfile(self._tmp_file):
             os.remove(self._tmp_file)
 
+    def test_cm_types(self):
+        prj_config = ProjectConfig.load(os.path.join(self._base_path, 'app_deploy_test'))
+        app_config = prj_config.load_app_config('cm-types')
+        runner = AppDeployment(prj_config, app_config, self._mode)
+        runner.deploy()
+
+        with open(self._tmp_file) as f:
+            content = f.read()
+        # Make sure the "y" is quoted
+        self.assertIn('"y"', content)
+
     def test_library(self):
         prj_config = ProjectConfig.load(os.path.join(self._base_path, 'lib-usage'))
         app_config = prj_config.load_app_config('some-app')

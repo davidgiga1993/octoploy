@@ -9,6 +9,7 @@ from octoploy.processing.DataPreProcessor import DataPreProcessor
 from octoploy.processing.OcObjectMerge import OcObjectMerge
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 from octoploy.utils.Log import Log
+from octoploy.utils.YmlWriter import YmlWriter
 
 
 class DeploymentBundle(Log):
@@ -85,4 +86,4 @@ class DeploymentBundle(Log):
 
         all_objects.extend(self.objects)
         with open(path, 'w') as file:
-            yaml.dump_all(all_objects, file, default_flow_style=False, sort_keys=True)
+            YmlWriter.dump_all(all_objects, file)

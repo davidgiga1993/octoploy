@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config
+data:
+  str: test
+  numberAsStr: "123"
+  boolAsStr1: "y"
+  boolAsStr2: "true"
