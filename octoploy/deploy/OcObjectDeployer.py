@@ -5,6 +5,7 @@ import yaml
 from octoploy.config.Config import ProjectConfig, AppConfig, RunMode
 from octoploy.oc.Oc import K8Api
 from octoploy.utils.Log import Log
+from octoploy.utils.YmlWriter import YmlWriter
 
 
 class OcObjectDeployer(Log):
@@ -37,7 +38,7 @@ class OcObjectDeployer(Log):
         """
 
         # Sort the content so it's always reproducible
-        str_repr = yaml.dump(data, sort_keys=True)
+        str_repr = YmlWriter.dump(data)
 
         hash_val = hashlib.md5(str_repr.encode('utf-8')).hexdigest()
         metadata = data['metadata']
