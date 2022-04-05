@@ -16,11 +16,11 @@ class YmlWriter:
             cls._INIT = True
 
     @classmethod
-    def dump(cls, data, default_flow_style: bool = True) -> str:
+    def dump(cls, data) -> str:
         cls.init()
-        return yaml.dump(data, sort_keys=True, default_flow_style=default_flow_style)
+        return yaml.dump(data, sort_keys=True, default_flow_style=False, width=float("inf"))
 
     @classmethod
     def dump_all(cls, data, file):
         cls.init()
-        yaml.dump_all(data, file, default_flow_style=False, sort_keys=True)
+        yaml.dump_all(data, file, sort_keys=True, default_flow_style=False, width=float("inf"))
