@@ -131,12 +131,16 @@ class AppDeployRunner(Log):
                 continue
 
             with open(path, 'r') as stream:
-                data = yaml.load_all(stream, Loader=yaml.FullLoader)
-                for doc in data:
-                    if doc is None:
-                        # Empty block
-                        continue
-                    self._bundle.add_object(doc, template_processor)
+                try:
+                    data = yaml.load_all(stream, Loader=yaml.FullLoader)
+                    for doc in data:
+                        if doc is None:
+                            # Empty block
+                            continue
+                        self._bundle.add_object(doc, template_processor)
+                except yaml.parser.ParserError as e:
+                    print(f'Could not parse {path} {e}')
+                    raise
 
     def _deploy_extra_configmaps(self, template_processor: YmlTemplateProcessor):
         """

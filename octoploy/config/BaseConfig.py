@@ -27,7 +27,8 @@ class BaseConfig(YmlConfig):
         :param path: Relative path
         :return: Path
         """
-        return os.path.abspath(os.path.join(self._path, os.pardir, path))
+        base = os.path.dirname(os.path.abspath(self._path))
+        return os.path.abspath(os.path.join(base, path))
 
     def get_template_processor(self) -> YmlTemplateProcessor:
         return YmlTemplateProcessor(self)
@@ -53,6 +54,7 @@ class BaseConfig(YmlConfig):
                     new_values = loader.load(value)
                     for new_key, new_val in new_values.items():
                         new_items[key + new_key] = new_val
+                    new_items[key] = 'viaLoader'
                     continue
 
         items.update(new_items)
