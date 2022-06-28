@@ -11,7 +11,7 @@ class BaseConfig(YmlConfig):
         super().__init__(path)
         self._external_vars = {}  # type: Dict[str, str]
         """
-        External variables for the templating engine
+        External variables (for example from forEach loops)
         """
         if external_vars is not None:
             self._external_vars = external_vars

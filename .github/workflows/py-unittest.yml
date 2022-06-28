@@ -14,6 +14,14 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install pytest pytest-cov
       - name: Unit test
         run: |
-          python -m unittest discover -s tests --pattern "*.py"
+          coverage run -m unittest discover -s tests --pattern "*.py"
+          coverage xml
+
+      - name: Python Cov
+          uses: orgoro/coverage@v2
+          with:
+            coverageFile: coverage.xml
+            token: ${{ secrets.GITHUB_TOKEN }}
