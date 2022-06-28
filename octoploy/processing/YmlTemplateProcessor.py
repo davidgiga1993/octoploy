@@ -163,7 +163,7 @@ class YmlTemplateProcessor(Log):
     def parent(self, template_processor: YmlTemplateProcessor):
         """
         Inherits all replacements from the given processor.
-        If the same value is defined in this and the parent, the definition of the this processor will override
+        If the same value is defined in this and the parent, the definition of this processor will override
         the parent definition
 
         :param template_processor: Child processor

@@ -14,7 +14,7 @@ from octoploy.utils.YmlWriter import YmlWriter
 
 class DeploymentBundle(Log):
     """
-    Holds all objects of a single deployment
+    Holds all objects of a single deployment (aka everything inside one folder)
     """
 
     def __init__(self, pre_processor: DataPreProcessor):
