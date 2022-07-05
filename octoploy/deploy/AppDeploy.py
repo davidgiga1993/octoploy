@@ -78,13 +78,20 @@ class AppDeployRunner(Log):
         if self._app_config.is_template():
             raise ValueError('App is a template and can\'t be deployed')
 
+        # Resolve all templating references
         template_processor = self._app_config.get_template_processor()
         template_processor.parent(self._root_config.get_template_processor())
 
-        self._deploy_templates(self._app_config.get_pre_template_refs(), template_processor)
+        self._apply_templates(self._app_config.get_pre_template_refs(), template_processor)
         self._load_files(self._app_config.get_config_root(), template_processor)
-        self._deploy_extra_configmaps(template_processor)
-        self._deploy_templates(self._app_config.get_post_template_refs(), template_processor)
+        self._load_extra_configmaps(template_processor)
+        self._apply_templates(self._app_config.get_post_template_refs(), template_processor)
+
+        # Additional processing
+        tree_processors = self._root_config.get_yml_processors()
+        for processor in tree_processors:
+            for data in self._bundle.objects:
+                processor.process(data)
 
         k8api = self._root_config.create_oc()
         if self._mode.out_file is not None:
@@ -96,7 +103,7 @@ class AppDeployRunner(Log):
         object_deployer = OcObjectDeployer(self._root_config, k8api, self._app_config, mode=self._mode)
         self._bundle.deploy(object_deployer)
 
-    def _deploy_templates(self, template_names: List[str], template_processor: YmlTemplateProcessor):
+    def _apply_templates(self, template_names: List[str], template_processor: YmlTemplateProcessor):
         """
         Deploys all referenced templates (recursively)
         """
@@ -116,9 +123,9 @@ class AppDeployRunner(Log):
 
             # The template might reference other templates
             # -> Recursively deploy them
-            self._deploy_templates(template.get_pre_template_refs(), child_template_processor)
+            self._apply_templates(template.get_pre_template_refs(), child_template_processor)
             self._load_files(template.get_config_root(), child_template_processor)
-            self._deploy_templates(template.get_post_template_refs(), child_template_processor)
+            self._apply_templates(template.get_post_template_refs(), child_template_processor)
 
     def _load_files(self, root: str, template_processor: YmlTemplateProcessor):
         """
@@ -142,9 +149,9 @@ class AppDeployRunner(Log):
                     print(f'Could not parse {path} {e}')
                     raise
 
-    def _deploy_extra_configmaps(self, template_processor: YmlTemplateProcessor):
+    def _load_extra_configmaps(self, template_processor: YmlTemplateProcessor):
         """
-        Deploys all defined file based configmaps
+        Loads all defined file based configmaps
         :param template_processor: Template processor which should be applied
         """
         for config in self._app_config.get_config_maps():

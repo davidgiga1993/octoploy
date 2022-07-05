@@ -56,8 +56,8 @@ configs
 |- _root.yml <- Project config
 |- my-app <- App
     |- _index.yml <- App config
-    |- dc.yml <- Openshift yml file(s)
-    |- secrets.yml
+    |- dc.yml <- Openshift/K8 yml file(s)
+    |- secrets.yml < Encrypted secrets file
 ```
 
 ### Project config
@@ -365,6 +365,18 @@ vars:
 ```
 
 When you now deploy the `prod` project it will inherit all apps inside `testLib`.
+
+## Secrets
+You can encrypt your k8s secrets using
+```bash
+export OCTOPLOY_KEY="my password"
+octoploy encrypt secrets.yml
+```
+The file will be updated in place.
+
+For deploying encrypted secrets, you'll need to set the environment variable
+`OCTOPLOY_KEY` with your key used to encrypt the data.
+
 
 ## Change tracking
 

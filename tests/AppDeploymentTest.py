@@ -98,6 +98,14 @@ KEY STUFF
             data = yaml.load(f, Loader=yaml.FullLoader)
         self.assertEqual('input', data['someObj']['param'])
 
+    def test_decryption(self):
+        os.environ['OCTOPLOY_KEY'] = 'key123'
+        self._deploy('secrets')
+        with open(self._tmp_file) as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+        self.assertEqual('hello world', data['data']['ref'])
+        self.assertEqual('hello world', data['data']['plain'])
+
     def _deploy(self, app: str, project: str = 'app_deploy_test'):
         prj_config = ProjectConfig.load(os.path.join(self._base_path, project))
         app_config = prj_config.load_app_config(app)

@@ -2,6 +2,8 @@ import os
 from typing import Dict, List, Optional
 
 from octoploy.config.YmlConfig import YmlConfig
+from octoploy.processing.DecryptionProcessor import DecryptionProcessor
+from octoploy.processing.TreeWalker import TreeProcessor
 from octoploy.processing.ValueLoader import ValueLoaderFactory
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 
@@ -29,6 +31,13 @@ class BaseConfig(YmlConfig):
         """
         base = os.path.dirname(os.path.abspath(self._path))
         return os.path.abspath(os.path.join(base, path))
+
+    def get_yml_processors(self) -> List[TreeProcessor]:
+        """
+        Returns all yml processors which should be applied
+        :return: Processors
+        """
+        return [DecryptionProcessor()]
 
     def get_template_processor(self) -> YmlTemplateProcessor:
         return YmlTemplateProcessor(self)

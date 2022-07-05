@@ -90,6 +90,12 @@ def create_backup(args):
     BackupGenerator(root_config).create_backup(args.name[0])
 
 
+def encrypt_secrets(args):
+    file = args.file
+    # TODO: implement me
+    pass
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--debug', dest='debug', action='store_true')
@@ -98,6 +104,10 @@ def main():
                         default='')
 
     subparsers = parser.add_subparsers(help='Commands')
+    backup_parser = subparsers.add_parser('encrypt', help='Encrypts k8s secrets objects')
+    backup_parser.add_argument('file', help='Yml file to be encrypted', nargs=1)
+    backup_parser.set_defaults(func=encrypt_secrets)
+
     backup_parser = subparsers.add_parser('backup', help='Creates a backup of all resources in the cluster')
     backup_parser.add_argument('name', help='Name of the backup folder', nargs=1)
     backup_parser.set_defaults(func=create_backup)

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import base64
 import os
+from typing import List, Dict
 
 import yaml
 
 from octoploy.deploy.OcObjectDeployer import OcObjectDeployer
 from octoploy.processing.DataPreProcessor import DataPreProcessor
+from octoploy.processing.DecryptionProcessor import DecryptionProcessor
 from octoploy.processing.OcObjectMerge import OcObjectMerge
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 from octoploy.utils.Log import Log
@@ -16,6 +19,7 @@ class DeploymentBundle(Log):
     """
     Holds all objects of a single deployment (aka everything inside one folder)
     """
+    objects: List[Dict[str, any]]
 
     def __init__(self, pre_processor: DataPreProcessor):
         super().__init__()
@@ -32,10 +36,7 @@ class DeploymentBundle(Log):
         if item_kind == '':
             self.log.info('Unknown object kind: ' + str(data))
             return
-        if item_kind == 'Secret'.lower():
-            self.log.info('Secrets are ignored')
-            return
-        
+
         # Pre-process any variables
         if template_processor is not None:
             template_processor.process(data)
