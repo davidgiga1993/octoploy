@@ -5,6 +5,7 @@ import argparse
 from octoploy.backup.BackupGenerator import BackupGenerator
 from octoploy.config.Config import ProjectConfig, RunMode
 from octoploy.deploy.AppDeploy import AppDeployment
+from octoploy.utils.Encryption import YmlEncrypter
 from octoploy.utils.Log import Log
 
 log_instance = Log('octoploy')
@@ -91,9 +92,9 @@ def create_backup(args):
 
 
 def encrypt_secrets(args):
-    file = args.file
-    # TODO: implement me
-    pass
+    files = args.file
+    for file in files:
+        YmlEncrypter(file).encrypt()
 
 
 def main():

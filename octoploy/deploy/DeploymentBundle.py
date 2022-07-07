@@ -7,6 +7,7 @@ from typing import List, Dict
 import yaml
 
 from octoploy.deploy.OcObjectDeployer import OcObjectDeployer
+from octoploy.k8s.BaseObj import BaseObj
 from octoploy.processing.DataPreProcessor import DataPreProcessor
 from octoploy.processing.DecryptionProcessor import DecryptionProcessor
 from octoploy.processing.OcObjectMerge import OcObjectMerge
@@ -32,8 +33,8 @@ class DeploymentBundle(Log):
         :param data: Object
         :param template_processor: Template processor which should be used
         """
-        item_kind = data.get('kind', '').lower()
-        if item_kind == '':
+        k8s_object = BaseObj(data)
+        if k8s_object.kind is None:
             self.log.info('Unknown object kind: ' + str(data))
             return
 
@@ -62,7 +63,8 @@ class DeploymentBundle(Log):
         # we want deploymentconfigs to be the last items since a config change might
         # have an impact
         def sorting(x):
-            object_kind = x['kind'].lower()
+            k8s_object = BaseObj(x)
+            object_kind = k8s_object.kind.lower()
             if object_kind == 'DeploymentConfig'.lower() or \
                     object_kind == 'Deployment'.lower():
                 return 1

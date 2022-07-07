@@ -1,3 +1,4 @@
+from octoploy.k8s.BaseObj import BaseObj
 from octoploy.utils.DictUtils import DictUtils
 
 
@@ -14,8 +15,8 @@ class DataPreProcessor:
 class OcToK8PreProcessor(DataPreProcessor):
 
     def process(self, yml):
-        kind = yml.get('kind')
-        if kind == 'DeploymentConfig':
+        k8s_object = BaseObj(yml)
+        if k8s_object.is_kind('DeploymentConfig'):
             yml['kind'] = 'Deployment'
             version = yml.get('apiVersion')
             if not version.startswith('apps/'):

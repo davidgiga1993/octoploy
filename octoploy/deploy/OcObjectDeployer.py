@@ -3,6 +3,7 @@ import hashlib
 import yaml
 
 from octoploy.config.Config import ProjectConfig, AppConfig, RunMode
+from octoploy.k8s.BaseObj import BaseObj
 from octoploy.oc.Oc import K8Api
 from octoploy.utils.Log import Log
 from octoploy.utils.YmlWriter import YmlWriter
@@ -41,14 +42,14 @@ class OcObjectDeployer(Log):
         str_repr = YmlWriter.dump(data)
 
         hash_val = hashlib.md5(str_repr.encode('utf-8')).hexdigest()
-        metadata = data['metadata']
 
+        k8s_object = BaseObj(data)
         # An object might be in a different namespace than the current context
-        namespace = metadata.get('namespace')
+        namespace = k8s_object.namespace
         if namespace is not None:
             self._oc.project(namespace)
 
-        item_name = data['kind'] + '/' + metadata['name']
+        item_name = k8s_object.kind + '/' + k8s_object.name
         description = self._oc.get(item_name)
         current_hash = None
         if description is not None:
@@ -76,8 +77,7 @@ class OcObjectDeployer(Log):
             # Use project namespace as default again
             self._oc.project(self._root_config.get_oc_project_name())
 
-        item_kind = data['kind'].lower()
-        if item_kind == 'ConfigMap'.lower():
+        if k8s_object.is_kind('ConfigMap'):
             self._reload_config()
 
     def _reload_config(self):

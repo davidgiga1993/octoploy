@@ -6,6 +6,7 @@ import yaml
 from octoploy.config.Config import ProjectConfig, RunMode
 from octoploy.deploy.AppDeploy import AppDeployment
 from octoploy.utils.Errors import MissingParam
+from octoploy.utils.Yml import Yml
 
 
 class AppDeploymentTest(TestCase):
@@ -67,11 +68,7 @@ KEY STUFF
     def test_for_each(self):
         self._deploy('app-for-each')
 
-        docs = []
-        with open(self._tmp_file) as f:
-            data = yaml.load_all(f, Loader=yaml.FullLoader)
-            for doc in data:
-                docs.append(doc)
+        docs = Yml.load_docs(self._tmp_file)
 
         # We should have two instances
         self.assertEqual(2, len(docs))

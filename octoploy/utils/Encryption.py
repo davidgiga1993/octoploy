@@ -1,11 +1,16 @@
 import base64
 import os
+from typing import Dict
 
 import Crypto.Hash.SHA256
 from Crypto import Random
 from Crypto.Cipher import AES
-from Crypto.Protocol.KDF import PBKDF2
 from Crypto.Hash import SHA512
+from Crypto.Protocol.KDF import PBKDF2
+
+from octoploy.k8s.SecretObj import SecretObj
+from octoploy.utils.Yml import Yml
+from octoploy.utils.YmlWriter import YmlWriter
 
 
 class AESCipher(object):
@@ -67,6 +72,7 @@ class AESCipher(object):
 
 class Encryption:
     KEY_ENV = 'OCTOPLOY_KEY'
+    CRYPT_PREFIX = 'OctoCrypt!'
 
     def __init__(self):
         self._cipher = None
@@ -87,3 +93,37 @@ class Encryption:
                                  f'de/encryption')
             self._cipher = AESCipher(key)
         return self._cipher
+
+
+class YmlEncrypter:
+    """
+    Encrypts k8s secret objects
+    """
+
+    def __init__(self, path: str):
+        self.path = path
+        self._encryption = Encryption()
+
+    def encrypt(self):
+        docs = Yml.load_docs(self.path)
+        did_find_secrets = False
+        for doc in docs:
+            try:
+                secret = SecretObj(doc)
+                did_find_secrets = True
+            except ValueError:
+                # Not a secret
+                continue
+            self._encrypt(secret.base64_data)
+            self._encrypt(secret.string_data)
+
+        if not did_find_secrets:
+            raise ValueError(f'Did not find a single secret in {self.path}')
+        with open(self.path, 'w') as file:
+            YmlWriter.dump_all(docs, file)
+
+    def _encrypt(self, data: Dict[str, any]):
+        for key, value in data.items():
+            if not isinstance(value, str) or value.startswith(Encryption.CRYPT_PREFIX):
+                continue
+            data[key] = Encryption.CRYPT_PREFIX + self._encryption.encrypt(value)

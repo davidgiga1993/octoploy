@@ -10,6 +10,7 @@ from octoploy.deploy.DeploymentBundle import DeploymentBundle
 from octoploy.deploy.OcObjectDeployer import OcObjectDeployer
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 from octoploy.utils.Log import Log
+from octoploy.utils.Yml import Yml
 
 
 class AppDeployment:
@@ -136,18 +137,13 @@ class AppDeployRunner(Log):
             path = os.path.join(root, item)
             if not os.path.isfile(path) or not item.endswith('.yml') or item.startswith('_'):
                 continue
-
-            with open(path, 'r') as stream:
-                try:
-                    data = yaml.load_all(stream, Loader=yaml.FullLoader)
-                    for doc in data:
-                        if doc is None:
-                            # Empty block
-                            continue
-                        self._bundle.add_object(doc, template_processor)
-                except yaml.parser.ParserError as e:
-                    print(f'Could not parse {path} {e}')
-                    raise
+            try:
+                docs = Yml.load_docs(path)
+            except yaml.parser.ParserError as e:
+                print(f'Could not parse {path} {e}')
+                raise
+            for doc in docs:
+                self._bundle.add_object(doc, template_processor)
 
     def _load_extra_configmaps(self, template_processor: YmlTemplateProcessor):
         """
