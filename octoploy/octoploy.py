@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 
 from octoploy.backup.BackupGenerator import BackupGenerator
 from octoploy.config.Config import ProjectConfig, RunMode
@@ -99,6 +100,7 @@ def encrypt_secrets(args):
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--version', dest='version', action='store_true')
     parser.add_argument('--debug', dest='debug', action='store_true')
     parser.add_argument('-c', '--config-dir', dest='config_dir',
                         help='Path to the folder containing all configurations',
@@ -144,6 +146,11 @@ def main():
     deploy_all_parser.set_defaults(func=deploy_all)
 
     args = parser.parse_args()
+    if args.version:
+        from octoploy import __version__
+        print(f'Octoploy {__version__}')
+        return
+
     if 'func' not in args.__dict__:
         parser.print_help()
         exit(1)
@@ -151,7 +158,6 @@ def main():
 
     if args.debug:
         Log.set_debug()
-
     args.func(args)
 
 
