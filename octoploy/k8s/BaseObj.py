@@ -21,5 +21,5 @@ class BaseObj:
         return self.kind.lower() == kind.lower()
 
     def require_kind(self, kind: str):
-        if not self.is_kind('secret'):
+        if not self.is_kind(kind):
             raise ValueError(f'Object is not of kind {kind}')
