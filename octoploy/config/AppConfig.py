@@ -28,7 +28,7 @@ class AppConfig(BaseConfig):
         """
         True if this app is enabled
         """
-        return self.data.get('enabled', False)
+        return self.data.get('enabled', True)
 
     def is_template(self) -> bool:
         """

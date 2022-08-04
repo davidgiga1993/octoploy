@@ -8,7 +8,7 @@ from octoploy.oc.Model import ItemDescription, PodData
 from octoploy.utils.Log import Log
 
 
-class K8Api(Log):
+class K8sApi(Log):
     def __init__(self):
         super().__init__('K8Api')
 
@@ -111,7 +111,7 @@ class K8Api(Log):
         raise NotImplemented
 
 
-class Oc(K8Api):
+class Oc(K8sApi):
     def get_namespaces(self) -> List[str]:
         lines = self._exec(['get', 'namespaces', '-o', 'name'])
         return lines.splitlines()

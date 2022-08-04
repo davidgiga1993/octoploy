@@ -17,7 +17,7 @@ class BackupGenerator(Log):
         if not os.path.exists(dir_name):
             os.mkdir(dir_name)
 
-        oc = self._config.create_oc()
+        oc = self._config.create_api()
         namespaces = oc.get_namespaces()
         apis = oc._exec(['api-resources', '--namespaced', '-o', 'name']).splitlines()
         for namespace in namespaces:

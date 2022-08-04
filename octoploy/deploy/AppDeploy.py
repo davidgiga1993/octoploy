@@ -7,8 +7,9 @@ import yaml
 
 from octoploy.config.Config import ProjectConfig, AppConfig, RunMode
 from octoploy.deploy.DeploymentBundle import DeploymentBundle
-from octoploy.deploy.OcObjectDeployer import OcObjectDeployer
+from octoploy.deploy.K8sObjectDeployer import K8sObjectDeployer
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
+from octoploy.utils.Errors import SkipObject
 from octoploy.utils.Log import Log
 from octoploy.utils.Yml import Yml
 
@@ -91,17 +92,21 @@ class AppDeployRunner(Log):
         # Additional processing
         tree_processors = self._root_config.get_yml_processors()
         for processor in tree_processors:
-            for data in self._bundle.objects:
-                processor.process(data)
+            for data in list(self._bundle.objects):
+                try:
+                    processor.process(data)
+                except SkipObject as e:
+                    self.log.warning(f'Skipping object: {e}')
+                    self._bundle.objects.remove(data)
 
-        k8api = self._root_config.create_oc()
+        k8sapi = self._root_config.create_api()
         if self._mode.out_file is not None:
             self._bundle.dump_objects(self._mode.out_file)
         if self._mode.dry_run:
             return
 
-        self.log.info('Checking ' + self._app_config.get_dc_name())
-        object_deployer = OcObjectDeployer(self._root_config, k8api, self._app_config, mode=self._mode)
+        self.log.info(f'Checking {self._app_config.get_dc_name()}')
+        object_deployer = K8sObjectDeployer(self._root_config, k8sapi, self._app_config, mode=self._mode)
         self._bundle.deploy(object_deployer)
 
     def _apply_templates(self, template_names: List[str], template_processor: YmlTemplateProcessor):
@@ -111,9 +116,9 @@ class AppDeployRunner(Log):
         for template_name in template_names:
             template = self._root_config.load_app_config(template_name)
             if not template.is_template():
-                raise ValueError('Referenced app ' + template_name + ' is not declared as template')
+                raise ValueError(f'Referenced app {template_name} is not declared as template')
             if not template.enabled():
-                self.log.warning('Template ' + template_name + ' is disabled, skipping')
+                self.log.warning(f'Template {template_name} is disabled, skipping')
                 return
 
             child_template_processor = YmlTemplateProcessor(template)
@@ -140,7 +145,7 @@ class AppDeployRunner(Log):
             try:
                 docs = Yml.load_docs(path)
             except yaml.parser.ParserError as e:
-                print(f'Could not parse {path} {e}')
+                self.log.error(f'Could not parse {path} {e}')
                 raise
             for doc in docs:
                 self._bundle.add_object(doc, template_processor)

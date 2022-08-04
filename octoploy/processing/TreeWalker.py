@@ -5,6 +5,12 @@ from typing import Dict, Optional
 class TreeProcessor:
     @abstractmethod
     def process(self, root: dict):
+        """
+        Processes the tree
+
+        :param root: Root of the tree
+        :raises: SkipObject: The tree should be skipped
+        """
         pass
 
     def process_object(self, data: Dict[str, any], parent: Dict[str, any], key: str) -> Optional[Dict[str, any]]:

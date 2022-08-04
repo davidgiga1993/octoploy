@@ -35,7 +35,7 @@ def reload_config(args):
         log_instance.log.error('App is a template')
         return
 
-    oc = root_config.create_oc()
+    oc = root_config.create_api()
     log_instance.log.info('Reloading ' + app_config.get_dc_name())
     reload_actions = app_config.get_reload_actions()
     for action in reload_actions:
