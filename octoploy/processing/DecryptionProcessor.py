@@ -2,6 +2,7 @@ from typing import Dict, Optional
 
 from octoploy.k8s.SecretObj import SecretObj
 from octoploy.processing.TreeWalker import TreeProcessor, TreeWalker
+from octoploy.utils import Utils
 from octoploy.utils.Encryption import Encryption
 from octoploy.utils.Errors import SkipObject
 
@@ -39,5 +40,5 @@ class DecryptionProcessor(TreeProcessor):
                 raise SkipObject('Secret contains')
 
             return value
-        payload = value.removeprefix(Encryption.CRYPT_PREFIX)
+        payload = Utils.remove_prefix(value, Encryption.CRYPT_PREFIX)
         return self.encryption.decrypt(payload)

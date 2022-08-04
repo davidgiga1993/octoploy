@@ -13,7 +13,8 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/davidgiga1993/octoploy',
     packages=setuptools.find_packages(),
-    install_requires=['pyyaml'],
+    python_requires='>=3.8',
+    install_requires=['pyyaml', 'pycryptodome'],
     entry_points={
         'console_scripts': ['octoploy=octoploy.octoploy:main'],
     },
