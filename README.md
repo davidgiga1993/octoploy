@@ -33,15 +33,13 @@ which describes the k8 namespace.
 All yml files will be pre-processed before they will be imported. This includes replacing any known `${KEY}` variables
 with their associate values and merging referenced templates.
 
-### Deploy all changes
+### Deploy / Plan
 
-Deploys all enabled app
+Deploys everything
 
 ```
 octoploy deploy-all
 ```
-
-### Deploy single app
 
 Deploys all object of the app with the give name
 
@@ -49,7 +47,11 @@ Deploys all object of the app with the give name
 octoploy deploy nginx
 ```
 
-### Reload config
+The same commands are available for `plan` - which will list changes to be applied.
+
+```
+octoploy plan / plan-all
+```
 
 This command executes the `on-config-change` trigger
 
@@ -73,7 +75,11 @@ configs
 Here is a sample `_root.yml` file
 
 ```yml
+# Name of the namespace / openshift project
 project: 'my-oc-project'
+
+# K8s context which should be used for deploying
+context: 'my-k8s-cluster-config'
 
 # OPTIONAL STUFF
 # Global variables
