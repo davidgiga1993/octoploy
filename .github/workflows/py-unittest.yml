@@ -14,6 +14,20 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install pytest pytest-cov
       - name: Unit test
         run: |
-          python -m unittest discover -s tests --pattern "*.py"
+          coverage run -m unittest discover -s tests --pattern "*.py"
+          coverage html --skip-covered --skip-empty
+
+      - name: Upload HTML report if check failed.
+        uses: actions/upload-artifact@v2
+        with:
+          name: html-report
+          path: htmlcov
+      - name: Python Cov
+        uses: orgoro/coverage@v2
+        with:
+          coverageFile: coverage.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+        if: github.event_name == 'pull_request'

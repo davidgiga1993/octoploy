@@ -1,0 +1,15 @@
+enabled: true
+applyTemplates: [ python-app-template ]
+
+vars:
+  ROLLOUT_STRATEGY: Rolling
+
+# We apply the template multiple times with different parameters
+# resulting in multiple deployments
+forEach:
+  - DC_NAME: 'app-1'
+    PORT: 8080
+
+  - DC_NAME: 'app-2'
+    PORT: 8081
+

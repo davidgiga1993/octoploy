@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import argparse
 
+from octoploy.processing.DecryptionProcessor import DecryptionProcessor
+
 from octoploy.backup.BackupGenerator import BackupGenerator
 from octoploy.config.Config import ProjectConfig, RunMode
 from octoploy.deploy.AppDeploy import AppDeployment
+from octoploy.utils.Encryption import YmlEncrypter
 from octoploy.utils.Log import Log
 
 log_instance = Log('octoploy')
@@ -34,7 +37,7 @@ def reload_config(args):
         log_instance.log.error('App is a template')
         return
 
-    oc = root_config.create_oc()
+    oc = root_config.create_api()
     log_instance.log.info('Reloading ' + app_config.get_dc_name())
     reload_actions = app_config.get_reload_actions()
     for action in reload_actions:
@@ -90,14 +93,29 @@ def create_backup(args):
     BackupGenerator(root_config).create_backup(args.name[0])
 
 
+def encrypt_secrets(args):
+    files = args.file
+    for file in files:
+        YmlEncrypter(file).encrypt()
+
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--debug', dest='debug', action='store_true')
+    parser.add_argument('--version', dest='version', action='store_true',
+                        help='Prints the current version')
+    parser.add_argument('--debug', dest='debug', action='store_true',
+                        help='Enables debug logging')
+    parser.add_argument('--skip-secrets', dest='skip_secrets', action='store_true',
+                        help="Skips all secret objects and therefore doesn't require a key to be set")
     parser.add_argument('-c', '--config-dir', dest='config_dir',
                         help='Path to the folder containing all configurations',
                         default='')
 
     subparsers = parser.add_subparsers(help='Commands')
+    backup_parser = subparsers.add_parser('encrypt', help='Encrypts k8s secrets objects')
+    backup_parser.add_argument('file', help='Yml file to be encrypted', nargs=1)
+    backup_parser.set_defaults(func=encrypt_secrets)
+
     backup_parser = subparsers.add_parser('backup', help='Creates a backup of all resources in the cluster')
     backup_parser.add_argument('name', help='Name of the backup folder', nargs=1)
     backup_parser.set_defaults(func=create_backup)
@@ -133,6 +151,11 @@ def main():
     deploy_all_parser.set_defaults(func=deploy_all)
 
     args = parser.parse_args()
+    if args.version:
+        from octoploy import __version__
+        print(f'Octoploy {__version__}')
+        return
+
     if 'func' not in args.__dict__:
         parser.print_help()
         exit(1)
@@ -141,6 +164,7 @@ def main():
     if args.debug:
         Log.set_debug()
 
+    DecryptionProcessor.skip_secrets = args.skip_secrets
     args.func(args)
 
 

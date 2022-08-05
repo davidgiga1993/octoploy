@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: "${DC_NAME}-nsq"
+spec:
+  selector:
+    deploymentconfig: "${DC_NAME}"
+  ports:
+    - name: tcp
+      protocol: TCP
+      port: 4150
+    - name: http
+      protocol: TCP
+      port: 4151
+  type: ClusterIP

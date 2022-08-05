@@ -5,7 +5,7 @@ from typing import Optional, Dict, List
 
 from octoploy.config.AppConfig import AppConfig
 from octoploy.config.BaseConfig import BaseConfig
-from octoploy.oc.Oc import Oc, K8, K8Api
+from octoploy.oc.Oc import Oc, K8, K8sApi
 from octoploy.processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 from octoploy.utils.Errors import ConfigError
@@ -76,7 +76,7 @@ class ProjectConfig(BaseConfig):
     def _get_mode(self) -> str:
         return self.data.get('mode', 'oc')
 
-    def create_oc(self) -> K8Api:
+    def create_api(self) -> K8sApi:
         """
         Creates a new openshift / k8 client
         :return: Client

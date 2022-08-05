@@ -1,0 +1,8 @@
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: "${DC_NAME}-config"
+data:
+  WS_PORT: "8080"
+  METRICS_PORT: "8000"

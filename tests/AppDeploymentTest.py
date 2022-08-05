@@ -6,6 +6,7 @@ import yaml
 from octoploy.config.Config import ProjectConfig, RunMode
 from octoploy.deploy.AppDeploy import AppDeployment
 from octoploy.utils.Errors import MissingParam
+from octoploy.utils.Yml import Yml
 
 
 class AppDeploymentTest(TestCase):
@@ -21,11 +22,25 @@ class AppDeploymentTest(TestCase):
         if os.path.isfile(self._tmp_file):
             os.remove(self._tmp_file)
 
+    def test_inherit_vars(self):
+        """
+        Makes sure variables from the app are passed to the library
+        and overrides and conflicts with values from the app
+        """
+        self._deploy('app')
+        with open(self._tmp_file) as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+        self.assertEqual('ABC', data['metadata']['name'])
+        self.assertEqual('ABC-1', data['metadata']['REMAPPED'])
+        self.assertEqual('ABC', data['metadata']['REMAPPED2'])
+        self.assertEqual('DEF', data['metadata']['name2'])
+        self.assertEqual('3', data['metadata']['base'])
+        # Global variable should be passed down and should not be
+        # overwritten by apps
+        self.assertEqual('global', data['metadata']['GLOBAL_TEST'])
+
     def test_cm_types(self):
-        prj_config = ProjectConfig.load(os.path.join(self._base_path, 'app_deploy_test'))
-        app_config = prj_config.load_app_config('cm-types')
-        runner = AppDeployment(prj_config, app_config, self._mode)
-        runner.deploy()
+        self._deploy('cm-types')
 
         with open(self._tmp_file) as f:
             content = f.read()
@@ -33,19 +48,15 @@ class AppDeploymentTest(TestCase):
         self.assertIn('"y"', content)
 
     def test_library(self):
-        prj_config = ProjectConfig.load(os.path.join(self._base_path, 'lib-usage'))
-        app_config = prj_config.load_app_config('some-app')
-        runner = AppDeployment(prj_config, app_config, self._mode)
-        runner.deploy()
+        self._deploy('some-app', project='lib-usage')
+
         with open(self._tmp_file) as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
         self.assertEqual('paramValue', data['metadata']['name'])
 
     def test_var_loader(self):
-        prj_config = ProjectConfig.load(os.path.join(self._base_path, 'lib-usage'))
-        app_config = prj_config.load_app_config('var-loader-app')
-        runner = AppDeployment(prj_config, app_config, self._mode)
-        runner.deploy()
+        self._deploy('var-loader-app', project='lib-usage')
+
         with open(self._tmp_file) as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
         expected = '''-----BEGIN PRIVATE KEY-----
@@ -55,16 +66,9 @@ KEY STUFF
         self.assertEqual(expected, data['KEY'])
 
     def test_for_each(self):
-        prj_config = ProjectConfig.load(os.path.join(self._base_path, 'app_deploy_test'))
-        app_config = prj_config.load_app_config('app-for-each')
-        runner = AppDeployment(prj_config, app_config, self._mode)
-        runner.deploy()
+        self._deploy('app-for-each')
 
-        docs = []
-        with open(self._tmp_file) as f:
-            data = yaml.load_all(f, Loader=yaml.FullLoader)
-            for doc in data:
-                docs.append(doc)
+        docs = Yml.load_docs(self._tmp_file)
 
         # We should have two instances
         self.assertEqual(2, len(docs))
@@ -91,17 +95,26 @@ KEY STUFF
             data = yaml.load(f, Loader=yaml.FullLoader)
         self.assertEqual('input', data['someObj']['param'])
 
-    def test_inherit_vars(self):
-        prj_config = ProjectConfig.load(os.path.join(self._base_path, 'app_deploy_test'))
-        app_config = prj_config.load_app_config('app')
-        runner = AppDeployment(prj_config, app_config, self._mode)
-        runner.deploy()
-
+    def test_secret_without_encryption(self):
+        """
+        Makes s ure secrets without encrypted values are not deployed
+        """
+        os.environ['OCTOPLOY_KEY'] = 'key123'
+        self._deploy('secrets')
         with open(self._tmp_file) as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
-        self.assertEqual('ABC', data['metadata']['name'])
-        self.assertEqual('ABC-1', data['metadata']['REMAPPED'])
-        self.assertEqual('ABC', data['metadata']['REMAPPED2'])
-        self.assertEqual('DEF', data['metadata']['name2'])
-        self.assertEqual('3', data['metadata']['base'])
-        self.assertEqual('global', data['metadata']['GLOBAL_TEST'])
+        self.assertTrue('plainText' not in data['stringData'])
+
+    def test_decryption(self):
+        os.environ['OCTOPLOY_KEY'] = 'key123'
+        self._deploy('secrets')
+        with open(self._tmp_file) as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+        self.assertEqual('hello world', data['stringData']['ref'])
+        self.assertEqual('hello world', data['stringData']['field'])
+
+    def _deploy(self, app: str, project: str = 'app_deploy_test'):
+        prj_config = ProjectConfig.load(os.path.join(self._base_path, project))
+        app_config = prj_config.load_app_config(app)
+        runner = AppDeployment(prj_config, app_config, self._mode)
+        runner.deploy()

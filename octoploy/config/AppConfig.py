@@ -28,7 +28,7 @@ class AppConfig(BaseConfig):
         """
         True if this app is enabled
         """
-        return self.data.get('enabled', False)
+        return self.data.get('enabled', True)
 
     def is_template(self) -> bool:
         """
@@ -54,7 +54,7 @@ class AppConfig(BaseConfig):
             assert isinstance(instance_vars, dict)
             dc_name = instance_vars.get('DC_NAME')
             if dc_name is None:
-                raise MissingVar('DC_NAME not defined in forEach for app ' + self.get_dc_name())
+                raise MissingVar('DC_NAME not defined in forEach for app ' + str(self.get_dc_name()))
 
             config = AppConfig(self._config_root, None, instance_vars)
             # Inherit all parameters

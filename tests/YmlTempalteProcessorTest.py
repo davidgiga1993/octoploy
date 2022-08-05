@@ -63,7 +63,7 @@ vars:
         self.assertEqual('hello', data['root']['list'][0]['other'])
         self.assertEqual('testVal', data['root']['sub']['item2'])
 
-    def test_merge_inline(self):
+    def test_merge_var_inline(self):
         with mock.patch('builtins.open', mock.mock_open(read_data='''
 dc:
     name: hello
@@ -77,6 +77,24 @@ vars:
         data = {'root': {
             'item': '${DC_NAME}',
             '_merge': '${MERGE_OBJ}',
+        }}
+        proc.process(data)
+        self.assertEqual('hello', data['root']['item'])
+        self.assertEqual('value', data['root']['someKey'])
+
+    def test_merge_object_inline(self):
+        with mock.patch('builtins.open', mock.mock_open(read_data='''
+dc:
+    name: hello
+''')):
+            app_config = AppConfig('', '')
+
+        proc = YmlTemplateProcessor(app_config)
+        data = {'root': {
+            'item': '${DC_NAME}',
+            '_merge': {
+                'someKey': 'value',
+            },
         }}
         proc.process(data)
         self.assertEqual('hello', data['root']['item'])

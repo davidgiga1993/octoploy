@@ -3,23 +3,27 @@ import hashlib
 import yaml
 
 from octoploy.config.Config import ProjectConfig, AppConfig, RunMode
-from octoploy.oc.Oc import K8Api
+from octoploy.k8s.BaseObj import BaseObj
+from octoploy.oc.Oc import K8sApi
 from octoploy.utils.Log import Log
 from octoploy.utils.YmlWriter import YmlWriter
 
 
-class OcObjectDeployer(Log):
+class K8sObjectDeployer(Log):
     """
-    Deploys single openshift objects
+    Deploys k9s object
     """
 
     HASH_ANNOTATION = 'yml-hash'
+    """
+    Name of the annotation that stores the hash
+    """
 
-    def __init__(self, root_config: ProjectConfig, oc: K8Api, app_config: AppConfig, mode: RunMode = RunMode()):
+    def __init__(self, root_config: ProjectConfig, k8sapi: K8sApi, app_config: AppConfig, mode: RunMode = RunMode()):
         super().__init__()
         self._root_config = root_config  # type: ProjectConfig
         self._app_config = app_config  # type: AppConfig
-        self._oc = oc  # type: K8Api
+        self._k8sapi = k8sapi  # type: K8sApi
         self._mode = mode
 
     def select_project(self):
@@ -28,8 +32,8 @@ class OcObjectDeployer(Log):
         """
         context = self._root_config.get_oc_context()
         if context is not None:
-            self._oc.switch_context(context)
-        self._oc.project(self._root_config.get_oc_project_name())
+            self._k8sapi.switch_context(context)
+        self._k8sapi.project(self._root_config.get_oc_project_name())
 
     def deploy_object(self, data: dict):
         """
@@ -41,15 +45,15 @@ class OcObjectDeployer(Log):
         str_repr = YmlWriter.dump(data)
 
         hash_val = hashlib.md5(str_repr.encode('utf-8')).hexdigest()
-        metadata = data['metadata']
 
+        k8s_object = BaseObj(data)
         # An object might be in a different namespace than the current context
-        namespace = metadata.get('namespace')
+        namespace = k8s_object.namespace
         if namespace is not None:
-            self._oc.project(namespace)
+            self._k8sapi.project(namespace)
 
-        item_name = data['kind'] + '/' + metadata['name']
-        description = self._oc.get(item_name)
+        item_name = k8s_object.kind + '/' + k8s_object.name
+        description = self._k8sapi.get(item_name)
         current_hash = None
         if description is not None:
             current_hash = description.get_annotation(self.HASH_ANNOTATION)
@@ -57,7 +61,7 @@ class OcObjectDeployer(Log):
         if description is not None and current_hash is None:
             # Item has not been deployed yet with this script, assume both are the same
             self.log.info('Updating annotation of ' + item_name)
-            self._oc.annotate(item_name, self.HASH_ANNOTATION, hash_val)
+            self._k8sapi.annotate(item_name, self.HASH_ANNOTATION, hash_val)
             return
 
         if current_hash == hash_val:
@@ -69,15 +73,14 @@ class OcObjectDeployer(Log):
             return
 
         self.log.info('Applying update ' + item_name + ' (item has changed)')
-        self._oc.apply(str_repr)
-        self._oc.annotate(item_name, 'yml-hash', hash_val)
+        self._k8sapi.apply(str_repr)
+        self._k8sapi.annotate(item_name, 'yml-hash', hash_val)
 
         if namespace is not None:
             # Use project namespace as default again
-            self._oc.project(self._root_config.get_oc_project_name())
+            self._k8sapi.project(self._root_config.get_oc_project_name())
 
-        item_kind = data['kind'].lower()
-        if item_kind == 'ConfigMap'.lower():
+        if k8s_object.is_kind('ConfigMap'):
             self._reload_config()
 
     def _reload_config(self):
@@ -86,4 +89,4 @@ class OcObjectDeployer(Log):
         """
         reload_actions = self._app_config.get_reload_actions()
         for action in reload_actions:
-            action.run(self._oc)
+            action.run(self._k8sapi)

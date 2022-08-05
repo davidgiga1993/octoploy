@@ -7,7 +7,7 @@ from octoploy.utils.Log import Log
 if TYPE_CHECKING:
     from octoploy.config.Config import AppConfig
 
-from octoploy.oc.Oc import K8Api
+from octoploy.oc.Oc import K8sApi
 
 
 class DeploymentActionConfig(Log):
@@ -19,7 +19,7 @@ class DeploymentActionConfig(Log):
         self._data = data
         self._app_config = app_config
 
-    def run(self, oc: K8Api):
+    def run(self, oc: K8sApi):
         if self._data == 'deploy':
             oc.rollout(self._app_config.get_dc_name())
             return

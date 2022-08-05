@@ -1,11 +1,30 @@
+import codecs
+import os
+
 import setuptools
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
 
+
+def read(rel_path):
+    here = os.path.abspath(os.path.dirname(__file__))
+    with codecs.open(os.path.join(here, rel_path), 'r') as fp:
+        return fp.read()
+
+
+def get_version(rel_path):
+    for line in read(rel_path).splitlines():
+        if line.startswith('__version__'):
+            delim = '"' if '"' in line else "'"
+            return line.split(delim)[1]
+    else:
+        raise RuntimeError("Unable to find version string.")
+
+
 setuptools.setup(
     name='octoploy',
-    version='1.0.10',
+    version=get_version('octoploy/__init__.py'),
     author='davidgiga1993',
     author_email='david@dev-core.org',
     description='Simple kubernetes / openshift templating engine with state tracking, backups and more',
@@ -13,7 +32,8 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/davidgiga1993/octoploy',
     packages=setuptools.find_packages(),
-    install_requires=['pyyaml'],
+    python_requires='>=3.8',
+    install_requires=['pyyaml', 'pycryptodome'],
     entry_points={
         'console_scripts': ['octoploy=octoploy.octoploy:main'],
     },
