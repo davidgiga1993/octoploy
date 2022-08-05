@@ -5,19 +5,27 @@ required objects.
 
 ## Use case
 
-This tool was born in the need to a very simple templating system which can track changes (similar to terraform). It was
-build for my requirements but should fit others as well.
+This tool was born in the need to a simple templating system which can track changes (similar to terraform) but
+with k8s object awareness.
 
-## Requirements
+## Installation
 
 - Python 3.8 or later
-- `oc` (or `kubectl`) binary in path
+- `kubectl` or `oc` binary in path
 
 ```
 pip install octoploy
 ```
 
 ## Usage
+
+```mermaid
+graph  TB
+    root[Root folder<br>_root.yml]
+    root --> app1[App 1<br>_index.yml<br>k8s yml files]
+    root --> app2[App 2<br>_index.yml<br>k8s yml files]
+
+```
 
 In octoploy you define apps, each app can contain multiple yml files. Additionally, there is a project configuration
 which describes the k8 namespace.
@@ -53,14 +61,14 @@ octoploy reload prometheus
 
 ```
 configs
-|- _root.yml <- Project config
+|- _root.yml <- Root config
 |- my-app <- App
     |- _index.yml <- App config
     |- dc.yml <- Openshift/K8 yml file(s)
     |- secrets.yml < Encrypted secrets file
 ```
 
-### Project config
+### Root config
 
 Here is a sample `_root.yml` file
 
@@ -143,7 +151,8 @@ will be automatically deployed.
 
 ### Variables
 
-You can refer to variables in yml files by using `${VAR-NAME}`. Variables can also be loaded from files (see loaders below).
+You can refer to variables in yml files by using `${VAR-NAME}`. Variables can also be loaded from files (see loaders
+below).
 
 ```yml
 # _index.yml
@@ -181,13 +190,15 @@ spec:
 
 The following variables are available anywhere inside the yml files by default
 
-| Key | Value |
-| --- | --- | 
-| `DC_NAME` | Name of the deployment-config in the `_index.yml` |
-| `OC_PROJECT` | Name of the openshift project in `_root.yml` |
+| Key          | Value                                             |
+|--------------|---------------------------------------------------| 
+| `DC_NAME`    | Name of the deployment-config in the `_index.yml` |
+| `OC_PROJECT` | Name of the openshift project in `_root.yml`      |
 
 ### Value Loaders
+
 You can load values from various sources using value loaders
+
 ```yml
 vars:
   # This will load the public/private and intermediate certs
@@ -197,7 +208,7 @@ vars:
   CERT:
     loader: pem
     file: my-cert.pem
-  
+
   # Load the content of a file into "MY_FILE"
   MY_FILE:
     loader: file
@@ -205,7 +216,7 @@ vars:
     # Optional: Defines in which encoding the file content should be read
     # utf-8 by default, only applicable if "conversion" is not set.
     encoding: utf-8
-    
+
     # Optional: Conversion can be used to convert a binary file 
     # into a string representation, in this base base64 
     conversion: base64
@@ -214,11 +225,32 @@ vars:
   ENV:
     loader: env
  ```
+
 ### Templates
 
-You can use templates to reuse and generate yml files. To do so you create a new app with the `type` field set
+You can use templates to reuse and generate yml files. This might be useful when you want
+to attach sidecar containers to multiple apps. To do so you create a new app with the `type` field set
 to `template`. Other apps can now refer to this template via the `applyTemplates` or `postApplyTemplates` field.
 Templates can refer to other templates (recursively). Any vars defined are passed to the next template.
+
+```mermaid
+classDiagram
+    App <|-- Root: App receives global variables
+    Template <|-- App: Template receives variables
+    
+    Template --|>App: Injects yml files into app
+    class Root{
+      +variables
+    }
+    class App{
+      +parameters
+      +k8s yml files
+    }
+    class Template{
+      +parameters
+      +k8s yml files
+    }  
+```
 
 Example:
 
@@ -314,7 +346,7 @@ spec:
           image: "docker-registry.default.svc:5000/oc-project/my-app:prod"
         # This is the part of the template
         - name: "nsqd"
-            image: "nsqio/nsq"
+          image: "nsqio/nsq"
 ```
 
 #### Loops
@@ -367,16 +399,18 @@ vars:
 When you now deploy the `prod` project it will inherit all apps inside `testLib`.
 
 ## Secrets
+
 You can encrypt your k8s secrets using
+
 ```bash
 export OCTOPLOY_KEY="my password"
 octoploy encrypt secrets.yml
 ```
+
 The file will be updated in place.
 
 For deploying encrypted secrets, you'll need to set the environment variable
 `OCTOPLOY_KEY` with your key used to encrypt the data.
-
 
 ## Change tracking
 
@@ -386,26 +420,6 @@ applied. If no label has been found in openshift the object is assumed to be equ
 ## Examples
 
 All examples can be found in the `examples` folder.
-
-### Grafana
-
-The grafana folder contains a basic grafana setup.
-
-### NSQ
-
-This example adds an NSQ sidecar container to a deployment config.
-
-`my-app/_index.yml`
-
-```yml
-enabled: true
-postApplyTemplates: [ nsq-template ]
-vars:
-  NSQ_NAME: 'app-nsq'
-
-dc:
-  name: my-app
-```
 
 ## Contribute
 

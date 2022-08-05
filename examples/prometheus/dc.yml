@@ -1,0 +1,92 @@
+kind: DeploymentConfig
+apiVersion: v1
+metadata:
+  name: "${DC_NAME}"
+
+spec:
+  replicas: 1
+  selector:
+    name: "${DC_NAME}"
+
+  strategy:
+    type: Recreate
+
+  template:
+    metadata:
+      labels:
+        name: "${DC_NAME}"
+
+    spec:
+      serviceAccountName: eagle-prometheus
+      serviceAccount: eagle-prometheus
+      containers:
+        - name: "${DC_NAME}"
+          image: "${IMAGE_NAME}:${TAG}"
+
+          args:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.enable-admin-api"
+            - "--enable-feature=remote-write-receiver"
+            - "--web.console.libraries=/usr/share/prometheus/console_libraries"
+            - "--web.console.templates=/usr/share/prometheus/consoles"
+            - "--storage.tsdb.retention.time=90d"
+            - "--storage.tsdb.retention.size=1500MB"
+          imagePullPolicy: IfNotPresent
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "400Mi"
+            limits:
+              cpu: "300m"
+              memory: "800Mi"
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus
+            - name: prometheus-data-volume
+              mountPath: /prometheus
+
+          startupProbe:
+            httpGet:
+              path: /
+              port: 9090
+            failureThreshold: 30
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 9090
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 9090
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
+
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            name: prometheus-config
+
+        - name: prometheus-data-volume
+          persistentVolumeClaim:
+            claimName: pvc-${DC_NAME}
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: prometheus
+spec:
+  selector:
+    name: "${DC_NAME}"
+  ports:
+    - name: api
+      protocol: TCP
+      port: 9090
+  type: ClusterIP
+

@@ -1,0 +1,53 @@
+kind: DeploymentConfig
+apiVersion: v1
+metadata:
+  name: "${DC_NAME}"
+
+spec:
+  replicas: 1
+  selector:
+    name: "${DC_NAME}"
+  strategy:
+    type: "${ROLLOUT_STRATEGY}"
+
+  template:
+    metadata:
+      labels:
+        name: "${DC_NAME}"
+
+    spec:
+      containers:
+        - name: "${DC_NAME}"
+          image: "image-registry.openshift-image-registry.svc:5000/${OC_PROJECT}/${DC_NAME}:latest"
+          imagePullPolicy: Always
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "100Mi"
+            limits:
+              cpu: "150m"
+              memory: "300Mi"
+          envFrom:
+            - configMapRef:
+                name: "${DC_NAME}-config"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: "${PORT}"
+            initialDelaySeconds: 10
+            timeoutSeconds: 30
+            periodSeconds: 30
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: "${DC_NAME}"
+spec:
+  selector:
+    name: "${DC_NAME}"
+  ports:
+    - name: http
+      protocol: TCP
+      port: "${PORT}"
+  type: ClusterIP

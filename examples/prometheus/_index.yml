@@ -1,0 +1,17 @@
+enabled: true
+applyTemplates: [storage]
+dc:
+  name: prometheus
+
+vars:
+  IMAGE_NAME: prom/prometheus
+  TAG: v2.34.0
+  PVC_SIZE: 5Gi
+
+configmaps:
+  - name: prometheus-config
+    files:
+      - file: "_prometheus.yml"
+        name: "prometheus.yml"
+        # We don't want to process the prometheus.yml file
+        disableTemplating: true

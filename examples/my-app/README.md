@@ -1,0 +1,1 @@
+A sample application which uses the nsq template to add a sidecar image
