@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import argparse
-import importlib
+
+from octoploy.processing.DecryptionProcessor import DecryptionProcessor
 
 from octoploy.backup.BackupGenerator import BackupGenerator
 from octoploy.config.Config import ProjectConfig, RunMode
@@ -100,8 +101,12 @@ def encrypt_secrets(args):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--version', dest='version', action='store_true')
-    parser.add_argument('--debug', dest='debug', action='store_true')
+    parser.add_argument('--version', dest='version', action='store_true',
+                        help='Prints the current version')
+    parser.add_argument('--debug', dest='debug', action='store_true',
+                        help='Enables debug logging')
+    parser.add_argument('--skip-secrets', dest='skip_secrets', action='store_true',
+                        help="Skips all secret objects and therefore doesn't require a key to be set")
     parser.add_argument('-c', '--config-dir', dest='config_dir',
                         help='Path to the folder containing all configurations',
                         default='')
@@ -158,6 +163,8 @@ def main():
 
     if args.debug:
         Log.set_debug()
+
+    DecryptionProcessor.skip_secrets = args.skip_secrets
     args.func(args)
 
 

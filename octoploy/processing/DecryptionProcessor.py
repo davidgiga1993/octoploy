@@ -9,8 +9,15 @@ from octoploy.utils.Errors import SkipObject
 
 class DecryptionProcessor(TreeProcessor):
     """
-    Processes all secret objects, and replaces any encrypted placeholders
+    Processes all objects, and replaces any encrypted placeholders.
+    If skip_secrets is True, all secret object types wil lbe skipped
     """
+
+    skip_secrets: bool = False
+    """
+    Indicates if all secrets should be skipped
+    """
+
     _secret_obj: Optional[SecretObj]
 
     def __init__(self):
@@ -37,8 +44,12 @@ class DecryptionProcessor(TreeProcessor):
             # Also, it may increase chances of accidentally storing them in vcs
             if key in self._secret_obj.base64_data or \
                     key in self._secret_obj.string_data:
-                raise SkipObject('Secret contains')
+                raise SkipObject('Secret contains plain text')
 
             return value
+        if DecryptionProcessor.skip_secrets and self._secret_obj is not None:
+            # We should skip the secret
+            raise SkipObject('Secrets should be skipped')
+
         payload = Utils.remove_prefix(value, Encryption.CRYPT_PREFIX)
         return self.encryption.decrypt(payload)
