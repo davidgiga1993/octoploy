@@ -1,5 +1,4 @@
 enabled: true
+name: 'ABC'
 params:
   - SomeParam
-dc:
-  name: 'ABC'

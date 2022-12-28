@@ -1,7 +1,6 @@
+import setuptools
 import codecs
 import os
-
-import setuptools
 
 with open('README.md', 'r') as fh:
     long_description = fh.read()
@@ -27,7 +26,7 @@ setuptools.setup(
     version=get_version('octoploy/__init__.py'),
     author='davidgiga1993',
     author_email='david@dev-core.org',
-    description='Simple kubernetes / openshift templating engine with state tracking, backups and more',
+    description='Simple kubernetes / openshift templating engine with templating, libraries, state tracking',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/davidgiga1993/octoploy',

@@ -52,15 +52,15 @@ class AppConfig(BaseConfig):
         instances = []
         for instance_vars in self.data.get('forEach', []):
             assert isinstance(instance_vars, dict)
-            dc_name = instance_vars.get('DC_NAME')
+            dc_name = instance_vars.get('APP_NAME')
             if dc_name is None:
-                raise MissingVar('DC_NAME not defined in forEach for app ' + str(self.get_dc_name()))
+                raise MissingVar('APP_NAME not defined in forEach for app ' + str(self.get_dc_name()))
 
             config = AppConfig(self._config_root, None, instance_vars)
             # Inherit all parameters
             config.data.update(self.data)
             # Update the DC_NAME
-            DictUtils.set(config.data, 'dc.name', dc_name)
+            DictUtils.set(config.data, 'name', dc_name)
             instances.append(config)
 
         if len(instances) == 0:
@@ -92,10 +92,13 @@ class AppConfig(BaseConfig):
 
     def get_dc_name(self) -> Optional[str]:
         """
-        Returns the configured name of the deployment config
+        Returns the app name
         :return: Name
         """
-        return DictUtils.get(self.data, 'dc.name')
+        name = DictUtils.get(self.data, 'name')
+        if name is not None:
+            return name
+        return DictUtils.get(self.data, 'dc.name')  # Deprecated
 
     def get_replacements(self) -> Dict[str, str]:
         """
@@ -106,6 +109,7 @@ class AppConfig(BaseConfig):
         dc_name = self.get_dc_name()
         if dc_name is not None:
             items.update({
-                'DC_NAME': dc_name
+                'APP_NAME': dc_name,
+                'DC_NAME': dc_name  # Deprecated
             })
         return items

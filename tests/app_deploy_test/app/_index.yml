@@ -1,9 +1,8 @@
 enabled: true
 applyTemplates: [ app-template ]
+name: 'ABC'
 vars:
   BASE: "3"
   PARAM_A: 'ABC'
   # It should not be possible to override global vars
   globalVar: 'overrideGlobalVar'
-dc:
-  name: 'ABC'

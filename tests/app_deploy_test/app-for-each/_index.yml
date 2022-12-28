@@ -4,10 +4,10 @@ vars:
   REMAPPED: hello
 
 forEach:
-  - DC_NAME: entity-compare-api
+  - APP_NAME: entity-compare-api
     PARAM_A: 8080
     SECOND: 1
 
-  - DC_NAME: favorite-api
+  - APP_NAME: favorite-api
     PARAM_A: 8081
     SECOND: 2

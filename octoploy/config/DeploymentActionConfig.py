@@ -16,6 +16,7 @@ class DeploymentActionConfig(Log):
     """
 
     def __init__(self, app_config: AppConfig, data):
+        super().__init__()
         self._data = data
         self._app_config = app_config
 
@@ -30,7 +31,7 @@ class DeploymentActionConfig(Log):
             args = exec_config['args']
 
             dc_name = self._app_config.get_dc_name()
-            log.info('Reloading via exec in pods of ' + dc_name)
+            self.log.info('Reloading via exec in pods of ' + dc_name)
             pods = oc.get_pods(dc_name=dc_name)
             for pod in pods:
                 oc.exec(pod.name, cmd, args)

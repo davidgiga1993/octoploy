@@ -1,6 +1,5 @@
 enabled: true
-dc:
-  name: 'ABC'
+name: 'ABC'
 
 vars:
   CERT:

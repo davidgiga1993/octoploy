@@ -31,7 +31,7 @@ class RunMode:
 
 class ProjectConfig(BaseConfig):
     """
-    Project configuration
+    Configuration for a project (aka a collection of apps inside a single context/namespace)
     """
 
     def __init__(self, config_root: str, path: str):
@@ -94,18 +94,18 @@ class ProjectConfig(BaseConfig):
         self._oc = oc
         return oc
 
-    def get_oc_project_name(self) -> Optional[str]:
+    def get_namespace_name(self) -> Optional[str]:
         """
-        Returns the name of the openshift project
+        Returns the namespace name of this project
 
-        :return: Name or null for libraries
+        :return: Name or null for libraries or if the namespace should not be changed
         """
-        return self.data.get('project')
+        return self.data.get('namespace', self.data.get('project'))
 
-    def get_oc_context(self) -> Optional[str]:
+    def get_kubectl_context(self) -> Optional[str]:
         """
         Returns the configuration context name
-        :return: Name
+        :return: Name or null if the current context should be used
         """
         return self.data.get('context')
 
@@ -122,10 +122,11 @@ class ProjectConfig(BaseConfig):
         :return: Key, value map
         """
         items = super().get_replacements()
-        name = self.get_oc_project_name()
+        name = self.get_namespace_name()
         if name is not None:
             items.update({
-                'OC_PROJECT': name
+                'OC_PROJECT': name,
+                'NAMESPACE': name
             })
         return items
 

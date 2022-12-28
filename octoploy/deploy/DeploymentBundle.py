@@ -57,7 +57,7 @@ class DeploymentBundle(Log):
         Deploys all object
         :param deploy_runner: Deployment runner which should be used
         """
-        deploy_runner.select_project()
+        deploy_runner.select_namespace()
 
         # First sort the objects, we want "deployments" to be the last object type
         # so all prerequisites are available

@@ -1,7 +1,6 @@
 enabled: true
 applyTemplates: [storage]
-dc:
-  name: prometheus
+name: prometheus
 
 vars:
   IMAGE_NAME: prom/prometheus

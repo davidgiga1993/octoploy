@@ -44,7 +44,7 @@ class DecryptionProcessor(TreeProcessor):
             # Also, it may increase chances of accidentally storing them in vcs
             if key in self._secret_obj.base64_data or \
                     key in self._secret_obj.string_data:
-                raise SkipObject('Secret contains plain text')
+                raise SkipObject('Secret contains plain text - use "octoploy encrypt" to encrypt your secrets')
 
             return value
         if DecryptionProcessor.skip_secrets and self._secret_obj is not None:

@@ -100,10 +100,8 @@ type: 'app'
 # Indicates if this app should be deployed or ignored
 enabled: true
 
-# Deployment config parameters
-dc:
-  # Name of the deployment config, available as variable, see below
-  name: 'my-app'
+# Name of the deployment, available as variable, see below
+name: 'my-app'
 
 # Template which should be applied, none by default
 applyTemplates: [ ]
@@ -114,7 +112,7 @@ postApplyTemplates: [ ]
 # Action which should be executed if a configmap has been changed
 on-config-change:
   # Available options: 
-  # deploy (re-deploys the deployment config)
+  # deploy (re-deploys the deployment config - openshift specific)
   - deploy
 
   # exec (Executes a command inside the running container)
@@ -196,10 +194,10 @@ spec:
 
 The following variables are available anywhere inside the yml files by default
 
-| Key          | Value                                             |
-|--------------|---------------------------------------------------| 
-| `DC_NAME`    | Name of the deployment-config in the `_index.yml` |
-| `OC_PROJECT` | Name of the openshift project in `_root.yml`      |
+| Key         | Value                                |
+|-------------|--------------------------------------| 
+| `APP_NAME`  | Name of the app in the `_index.yml`  |
+| `NAMESPACE` | Name of the namespace in `_root.yml` |
 
 ### Value Loaders
 
@@ -365,12 +363,12 @@ all have the same openshift config.
 enabled: true
 applyTemplates: [ api-template ]
 forEach:
-  # DC_NAME is required for each instance that should be created
-  - DC_NAME: entity-compare-api
+  # NAME is required for each instance that should be created
+  - NAME: entity-compare-api
     # You can define other vars as well
     PORT: 8080
 
-  - DC_NAME: favorite-api
+  - NAME: favorite-api
     PORT: 8081
 ```
 
@@ -422,6 +420,8 @@ For deploying encrypted secrets, you'll need to set the environment variable
 
 Changes are detected by storing a md5 sum in the label of the object. If this hash has changed the whole object will be
 applied. If no label has been found in openshift the object is assumed to be equal, and the label is added.
+
+Currently, the actual fields of the yml files are not compared, however this is a planned feature.  
 
 ## Examples
 

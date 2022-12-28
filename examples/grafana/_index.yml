@@ -1,6 +1,5 @@
 enabled: true
-dc:
-  name: grafana
+name: grafana
 
 vars:
   DOMAIN: grafana-yams-prod.openshift.com

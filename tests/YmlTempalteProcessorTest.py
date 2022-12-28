@@ -8,8 +8,7 @@ class YmlTemplateProcessorTest(TestCase):
 
     def test_replace(self):
         with mock.patch('builtins.open', mock.mock_open(read_data='''
-dc:
-    name: hello
+name: hello
 vars:
     MY_VAR: testVal
     IMAGE_NAME: image
@@ -41,8 +40,7 @@ vars:
 
     def test_params(self):
         with mock.patch('builtins.open', mock.mock_open(read_data='''
-dc:
-    name: hello
+name: hello
 vars:
     MY_VAR: testVal
 ''')):
@@ -65,8 +63,7 @@ vars:
 
     def test_merge_var_inline(self):
         with mock.patch('builtins.open', mock.mock_open(read_data='''
-dc:
-    name: hello
+name: hello
 vars:
     MERGE_OBJ: 
         someKey: value
@@ -84,8 +81,7 @@ vars:
 
     def test_merge_object_inline(self):
         with mock.patch('builtins.open', mock.mock_open(read_data='''
-dc:
-    name: hello
+name: hello
 ''')):
             app_config = AppConfig('', '')
 

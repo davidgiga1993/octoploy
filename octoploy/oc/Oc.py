@@ -85,10 +85,10 @@ class K8sApi(Log):
         raise NotImplemented
 
     @abstractmethod
-    def project(self, project: str):
+    def set_namespace(self, namespace: str):
         """
         Changes the default project / namespace
-        :param project: Project
+        :param namespace: Namespace name
         """
         raise NotImplemented
 
@@ -180,8 +180,8 @@ class Oc(K8sApi):
         proc_args.extend(args)
         self._exec(proc_args, print_out=True)
 
-    def project(self, project: str):
-        self._exec(['project', project])
+    def set_namespace(self, namespace: str):
+        self._exec(['project', namespace])
 
     def switch_context(self, context: str):
         raise NotImplemented('Not available for openshift')
@@ -224,8 +224,8 @@ class K8(Oc):
     def tag(self, source: str, dest: str):
         raise NotImplemented('Not available for k8')
 
-    def project(self, project: str):
-        self._namespace = project
+    def set_namespace(self, namespace: str):
+        self._namespace = namespace
 
     def switch_context(self, context: str):
         self._exec(['config', 'use-context', context])

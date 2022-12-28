@@ -26,14 +26,16 @@ class K8sObjectDeployer(Log):
         self._k8sapi = k8sapi  # type: K8sApi
         self._mode = mode
 
-    def select_project(self):
+    def select_namespace(self):
         """
         Selects the required openshift project
         """
-        context = self._root_config.get_oc_context()
+        context = self._root_config.get_kubectl_context()
         if context is not None:
             self._k8sapi.switch_context(context)
-        self._k8sapi.project(self._root_config.get_oc_project_name())
+        namespace = self._root_config.get_namespace_name()
+        if namespace is not None:
+            self._k8sapi.set_namespace(namespace)
 
     def deploy_object(self, data: dict):
         """
@@ -48,9 +50,9 @@ class K8sObjectDeployer(Log):
 
         k8s_object = BaseObj(data)
         # An object might be in a different namespace than the current context
-        namespace = k8s_object.namespace
-        if namespace is not None:
-            self._k8sapi.project(namespace)
+        object_namespace = k8s_object.namespace
+        if object_namespace is not None:
+            self._k8sapi.set_namespace(object_namespace)
 
         item_name = k8s_object.kind + '/' + k8s_object.name
         description = self._k8sapi.get(item_name)
@@ -76,9 +78,11 @@ class K8sObjectDeployer(Log):
         self._k8sapi.apply(str_repr)
         self._k8sapi.annotate(item_name, 'yml-hash', hash_val)
 
-        if namespace is not None:
+        if object_namespace is not None:
             # Use project namespace as default again
-            self._k8sapi.project(self._root_config.get_oc_project_name())
+            default_namespace = self._root_config.get_namespace_name()
+            if default_namespace is not None:
+                self._k8sapi.set_namespace(default_namespace)
 
         if k8s_object.is_kind('ConfigMap'):
             self._reload_config()

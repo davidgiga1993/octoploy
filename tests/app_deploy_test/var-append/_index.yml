@@ -1,6 +1,5 @@
 enabled: true
-dc:
-  name: var-append
+name: var-append
 
 vars:
   globalVar: ${globalVar} newItem

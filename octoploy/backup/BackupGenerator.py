@@ -23,7 +23,7 @@ class BackupGenerator(Log):
         for namespace in namespaces:
             namespace = namespace.split('/')[1]
             self.log.info(f'Backup up namespace {namespace}')
-            oc.project(namespace)
+            oc.set_namespace(namespace)
             for api in apis:
                 try:
                     names = oc._exec(['get', api, '-o', 'name']).splitlines()
