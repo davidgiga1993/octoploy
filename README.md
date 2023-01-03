@@ -76,7 +76,7 @@ Here is a sample `_root.yml` file
 
 ```yml
 # Name of the namespace / openshift project
-project: 'my-oc-project'
+namespace: 'my-oc-project'
 
 # K8s context which should be used for deploying
 context: 'my-k8s-cluster-config'
@@ -390,7 +390,7 @@ params:
 
 ```yml
 # prod/_root.yml
-project: 'prod-project'
+namespace: 'prod-project'
 inherit: testLib
 
 # Required parameters

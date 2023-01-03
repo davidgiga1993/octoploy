@@ -1,4 +1,4 @@
-project: 'oc-project'
+namespace: 'oc-project'
 inherit: 'lib'
 
 vars:
