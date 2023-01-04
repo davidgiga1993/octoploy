@@ -2,10 +2,10 @@ from unittest import TestCase
 
 import yaml
 
-from octoploy.processing.OcObjectMerge import OcObjectMerge
+from octoploy.processing.K8sObjectMerge import K8sObjectMerge
 
 
-class OcObjectMergeTest(TestCase):
+class K8sObjectMergeTest(TestCase):
 
     def test_append_sidecar_container(self):
         existing = '''kind: DeploymentConfig
@@ -40,7 +40,7 @@ spec:
       containers:
         - name: "sidecar-container"
 '''
-        merge = OcObjectMerge()
+        merge = K8sObjectMerge()
         data = yaml.safe_load(existing)
         merge.merge(data, yaml.safe_load(new))
 
@@ -139,7 +139,7 @@ spec:
           persistentVolumeClaim:
             claimName: "pvc-crawler-packages"'''
 
-        merge = OcObjectMerge()
+        merge = K8sObjectMerge()
         data = yaml.safe_load(existing)
         merge.merge(data, yaml.safe_load(new))
 

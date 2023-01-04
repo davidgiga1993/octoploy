@@ -5,9 +5,10 @@ from typing import Optional, Dict, List
 
 from octoploy.config.AppConfig import AppConfig
 from octoploy.config.BaseConfig import BaseConfig
-from octoploy.oc.Oc import Oc, K8, K8sApi
+from octoploy.api.Oc import Oc, K8, K8sApi
 from octoploy.processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
+from octoploy.state.StateTracking import StateTracking
 from octoploy.utils.Errors import ConfigError
 
 
@@ -29,16 +30,16 @@ class RunMode:
         """
 
 
-class ProjectConfig(BaseConfig):
+class RootConfig(BaseConfig):
     """
-    Configuration for a project (aka a collection of apps inside a single context/namespace)
+    Root configuration for a project (aka a collection of apps inside a single context/namespace)
     """
 
     def __init__(self, config_root: str, path: str):
         super().__init__(path)
         self._config_root = config_root
         self._oc = None
-        self._library = None  # type: Optional[ProjectConfig]
+        self._library = None  # type: Optional[RootConfig]
 
         inherit = self.data.get('inherit')
         if inherit is not None:
@@ -47,13 +48,28 @@ class ProjectConfig(BaseConfig):
             lib_dir = os.path.join(parent_dir, inherit)
             if not os.path.isdir(lib_dir):
                 raise FileNotFoundError('Library not found: ' + lib_dir)
-            self._library = ProjectConfig.load(lib_dir)
+            self._library = RootConfig.load(lib_dir)
             if not self._library.is_library():
                 raise ConfigError('Project ' + inherit + ' referenced as library but is not a library')
 
+        self._state = StateTracking(self.create_api())
+
     @classmethod
-    def load(cls, path: str) -> ProjectConfig:
-        return ProjectConfig(path, os.path.join(path, '_root.yml'))
+    def load(cls, path: str) -> RootConfig:
+        return RootConfig(path, os.path.join(path, '_root.yml'))
+
+    def get_state(self) -> StateTracking:
+        return self._state
+
+    def initialize_state(self, run_mode: RunMode):
+        if run_mode.dry_run:
+            return
+        self._state.restore(self.get_namespace_name())
+
+    def persist_state(self, run_mode: RunMode):
+        if run_mode.dry_run:
+            return
+        self._state.store(self.get_namespace_name())
 
     def get_config_root(self) -> str:
         return self._config_root
@@ -78,7 +94,7 @@ class ProjectConfig(BaseConfig):
 
     def create_api(self) -> K8sApi:
         """
-        Creates a new openshift / k8 client
+        Creates a new openshift / k8s client
         :return: Client
         """
         if self._oc is not None:

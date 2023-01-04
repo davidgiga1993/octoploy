@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import yaml
 
-from octoploy.config.Config import ProjectConfig, RunMode
+from octoploy.config.Config import RootConfig, RunMode
 from octoploy.deploy.AppDeploy import AppDeployment
 from octoploy.utils.Errors import MissingParam
 from octoploy.utils.Yml import Yml
@@ -76,7 +76,7 @@ KEY STUFF
         self.assertEqual('hello', docs[1]['metadata']['REMAPPED'])
 
     def test_params(self):
-        prj_config = ProjectConfig.load(os.path.join(self._base_path, 'app_deploy_test'))
+        prj_config = RootConfig.load(os.path.join(self._base_path, 'app_deploy_test'))
         app_config = prj_config.load_app_config('app-params')
         runner = AppDeployment(prj_config, app_config, self._mode)
         try:
@@ -114,7 +114,7 @@ KEY STUFF
         self.assertEqual('hello world', data['stringData']['field'])
 
     def _deploy(self, app: str, project: str = 'app_deploy_test'):
-        prj_config = ProjectConfig.load(os.path.join(self._base_path, project))
+        prj_config = RootConfig.load(os.path.join(self._base_path, project))
         app_config = prj_config.load_app_config(app)
         runner = AppDeployment(prj_config, app_config, self._mode)
         runner.deploy()

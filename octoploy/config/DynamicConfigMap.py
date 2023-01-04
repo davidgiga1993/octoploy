@@ -11,7 +11,7 @@ class ConfigMapObject:
         self.disable_templating = disable_templating
 
 
-class ConfigMap:
+class DynamicConfigMap:
     def __init__(self, data):
         self._data = data
         self.name = data['name']

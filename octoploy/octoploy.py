@@ -5,7 +5,7 @@ import argparse
 from octoploy.processing.DecryptionProcessor import DecryptionProcessor
 
 from octoploy.backup.BackupGenerator import BackupGenerator
-from octoploy.config.Config import ProjectConfig, RunMode
+from octoploy.config.Config import RootConfig, RunMode
 from octoploy.deploy.AppDeploy import AppDeployment
 from octoploy.utils.Encryption import YmlEncrypter
 from octoploy.utils.Log import Log
@@ -13,15 +13,15 @@ from octoploy.utils.Log import Log
 log_instance = Log('octoploy')
 
 
-def load_project(config_dir: str) -> ProjectConfig:
+def load_project(config_dir: str) -> RootConfig:
     if config_dir != '':
-        return ProjectConfig.load(config_dir)
+        return RootConfig.load(config_dir)
 
     # No path specified, try a few common ones
     paths = ['.', 'configs', 'octoploy']
     for path in paths:
         try:
-            return ProjectConfig.load(path)
+            return RootConfig.load(path)
         except FileNotFoundError:
             continue
     raise FileNotFoundError(f'Did not find config in any of {paths}')
@@ -38,7 +38,7 @@ def reload_config(args):
         return
 
     oc = root_config.create_api()
-    log_instance.log.info('Reloading ' + app_config.get_dc_name())
+    log_instance.log.info('Reloading ' + app_config.get_name())
     reload_actions = app_config.get_reload_actions()
     for action in reload_actions:
         action.run(oc)
@@ -48,17 +48,25 @@ def reload_config(args):
 def _run_app_deploy(config_dir: str, app_name: str, mode: RunMode):
     root_config = load_project(config_dir)
     app_config = root_config.load_app_config(app_name)
-    deployment = AppDeployment(root_config, app_config, mode)
-    deployment.deploy()
+    root_config.initialize_state(mode)
+    try:
+        deployment = AppDeployment(root_config, app_config, mode)
+        deployment.deploy()
+    finally:
+        root_config.persist_state(mode)
     log_instance.log.info('Done')
 
 
 def _run_apps_deploy(config_dir: str, mode: RunMode):
     root_config = load_project(config_dir)
     configs = root_config.load_app_configs()
-    log_instance.log.info(f'Got {len(configs)} configs')
-    for app_config in configs:
-        AppDeployment(root_config, app_config, mode).deploy()
+    root_config.initialize_state(mode)
+    log_instance.log.debug(f'Found {len(configs)} apps to deploy')
+    try:
+        for app_config in configs:
+            AppDeployment(root_config, app_config, mode).deploy()
+    finally:
+        root_config.persist_state(mode)
     log_instance.log.info('Done')
 
 
@@ -136,7 +144,10 @@ def main():
     deploy_parser.add_argument('--out-file', dest='out_file',
                                help='Writes all objects into a yml file instead of deploying them. '
                                     'This does not communicate with openshift in any way')
-    deploy_parser.add_argument('--dry-run', dest='dry_run', help='Does not interact with openshift',
+    deploy_parser.add_argument('--dry-run', dest='dry_run', help='Does not interact with k8s/openshift '
+                                                                 '(pure template processing). '
+                                                                 'Can be used in conjunction with out-file to preview '
+                                                                 'templates',
                                action='store_true')
     deploy_parser.add_argument('name', help='Name of the app which should be deployed (folder name)', nargs=1)
     deploy_parser.set_defaults(func=deploy_app)

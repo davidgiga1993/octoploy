@@ -1,13 +1,13 @@
 from typing import Dict
 
-from octoploy.oc.Model import DeploymentConfig, NamedItem
+from octoploy.api.Model import DeploymentConfig, NamedItem
 from octoploy.utils.DictUtils import DictUtils
 from octoploy.utils.Log import Log
 
 
-class OcObjectMerge(Log):
+class K8sObjectMerge(Log):
     """
-    Merges openshift objects
+    Merges kubernetes objects
     """
     NAME_PATH = 'metadata.name'
 
@@ -33,7 +33,7 @@ class OcObjectMerge(Log):
         if name is not None and expected_name is not None and expected_name != name:
             return False
 
-        if expected_type == 'DeploymentConfig'.lower():
+        if expected_type == 'DeploymentConfig'.lower() or expected_type == 'Deployment'.lower():
             self._merge_dc(DeploymentConfig(existing), DeploymentConfig(to_add))
             return True
 
