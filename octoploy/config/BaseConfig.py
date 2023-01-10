@@ -61,9 +61,9 @@ class BaseConfig(YmlConfig):
                 if loader_name is not None:
                     loader = ValueLoaderFactory.create(self, value['loader'])
                     new_values = loader.load(value)
+                    new_items[key] = 'viaLoader'
                     for new_key, new_val in new_values.items():
                         new_items[key + new_key] = new_val
-                    new_items[key] = 'viaLoader'
                     continue
 
         items.update(new_items)
