@@ -1,12 +1,11 @@
 from __future__ import annotations
+
 from typing import Dict, List, Optional
 
-from octoploy.k8s.BaseObj import BaseObj
-
-from octoploy.utils.YmlWriter import YmlWriter
-from octoploy.utils.Log import Log
-
 from octoploy.api.Oc import K8sApi
+from octoploy.k8s.BaseObj import BaseObj
+from octoploy.utils.Log import Log
+from octoploy.utils.YmlWriter import YmlWriter
 
 
 class ObjectState:
@@ -15,6 +14,7 @@ class ObjectState:
         self.name = ''
         self.api_version = ''
         self.kind = ''
+        self.hash = ''
         self.namespace: Optional[str] = None
         self.visited = False
         """
@@ -27,11 +27,13 @@ class ObjectState:
         self.api_version = data['apiVersion']
         self.kind = data['kind']
         self.name = data['name']
+        self.hash = data.get('hash', '')
         return self
 
     def to_dict(self) -> Dict[str, str]:
         return {
             'name': self.name,
+            'hash': self.hash,
             'apiVersion': self.api_version,
             'kind': self.kind,
             'context': self.context,
@@ -99,14 +101,19 @@ class StateTracking(Log):
                 items.append(object_state)
         return items
 
-    def visit(self, context_name: str, k8s_object: BaseObj):
+    def get_state(self, context_name: str, k8s_object: BaseObj) -> Optional[ObjectState]:
+        state = self._k8s_to_state(context_name, k8s_object, '')
+        return self._state.get(state.get_key())
+
+    def visit(self, context_name: str, k8s_object: BaseObj, hash_val: str):
         """
         Marks the given object as "visited".
         If the object is not yet in the state it will be added
         :param context_name: Name of the state context
         :param k8s_object: Kubernetes object
+        :param hash_val: Hash value of the object
         """
-        state = self._k8s_to_state(context_name, k8s_object)
+        state = self._k8s_to_state(context_name, k8s_object, hash_val)
         existing_state = self._state.get(state.get_key())
         if existing_state is None:
             self._state[state.get_key()] = state
@@ -116,7 +123,7 @@ class StateTracking(Log):
     def remove(self, object_state: ObjectState):
         del self._state[object_state.get_key()]
 
-    def _k8s_to_state(self, context_name: str, k8s_object: BaseObj) -> ObjectState:
+    def _k8s_to_state(self, context_name: str, k8s_object: BaseObj, hash_val: str) -> ObjectState:
         api_version = k8s_object.api_version
         kind = k8s_object.kind
         name = k8s_object.name
@@ -128,4 +135,5 @@ class StateTracking(Log):
         state.kind = kind
         state.name = name
         state.visited = True
+        state.hash = hash_val
         return state

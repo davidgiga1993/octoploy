@@ -416,10 +416,14 @@ The file will be updated in place.
 For deploying encrypted secrets, you'll need to set the environment variable
 `OCTOPLOY_KEY` with your key used to encrypt the data.
 
-## Change tracking
+## State tracking
 
-Changes are detected by storing a md5 sum in the label of the object. If this hash has changed the whole object will be
-applied. If no label has been found in openshift the object is assumed to be equal, and the label is added.
+Octoploy currently uses a ConfigMap called `octoploy-state` to keep track of the object states.
+
+The ConfigMap contains  all managed objects and their md5 sum. If this hash has changed the whole object will be
+applied. If the object does already exist, but is not listed in the state it will simply be added to the state.
+
+You can modify the name of the configmap by setting the `stateName` variable in the `_root.yml` file.
 
 Currently, the actual fields of the yml files are not compared, however this is a planned feature.  
 

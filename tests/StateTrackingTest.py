@@ -37,7 +37,7 @@ class StateTrackingTest(TestCase):
 
         octoploy.octoploy._run_app_deploy('app_deploy_test', 'app', self._mode)
 
-        self.assertEqual(5, len(self._dummy_api.commands))
+        self.assertEqual(4, len(self._dummy_api.commands))
         self.assertEqual(['get', 'ConfigMap/octoploy-state', '-o', 'json'], self._dummy_api.commands[0].args)
         state_update = self._dummy_api.commands[-1]
         self.assertEqual(['apply', '-f', '-'], state_update.args)
@@ -46,6 +46,7 @@ class StateTrackingTest(TestCase):
   "state":
   - "apiVersion": "v1"
     "context": "ABC"
+    "hash": "dbd4e8fa683fade0a76bcd94c92e2293"
     "kind": "DeploymentConfig"
     "name": "ABC"
     "namespace": "oc-project"
@@ -64,7 +65,7 @@ class StateTrackingTest(TestCase):
         os.environ['OCTOPLOY_KEY'] = TestUtils.OCTOPLOY_KEY
         octoploy.octoploy._run_apps_deploy('app_deploy_test', self._mode)
 
-        self.assertEqual(20, len(self._dummy_api.commands))
+        self.assertEqual(14, len(self._dummy_api.commands))
         self.assertEqual(['get', 'ConfigMap/octoploy-state', '-o', 'json'], self._dummy_api.commands[0].args)
 
         state_update = self._dummy_api.commands[-1]
@@ -74,31 +75,37 @@ class StateTrackingTest(TestCase):
   "state":
   - "apiVersion": "v1"
     "context": "ABC"
+    "hash": "dbd4e8fa683fade0a76bcd94c92e2293"
     "kind": "DeploymentConfig"
     "name": "ABC"
     "namespace": "oc-project"
   - "apiVersion": "v1"
     "context": "entity-compare-api"
+    "hash": "4b22586489a2acd974557528748319e5"
     "kind": "DeploymentConfig"
     "name": "8080"
     "namespace": "oc-project"
   - "apiVersion": "v1"
     "context": "favorite-api"
+    "hash": "9f183e7c1f686a996fe893b686e70e63"
     "kind": "DeploymentConfig"
     "name": "8081"
     "namespace": "oc-project"
   - "apiVersion": "v1"
     "context": "cm-types"
+    "hash": "a48eadd6d347e2591a3929df077aead7"
     "kind": "ConfigMap"
     "name": "config"
     "namespace": "oc-project"
   - "apiVersion": "v1"
     "context": "ABC2"
+    "hash": "ea23b547bb9a06ca79d3dc23c3d1d0dd"
     "kind": "Secret"
     "name": "secret"
     "namespace": "oc-project"
   - "apiVersion": "v1"
     "context": "var-append"
+    "hash": "e19d6902d55e14e99213b1d112acbde0"
     "kind": "ConfigMap"
     "name": "config"
     "namespace": "oc-project"

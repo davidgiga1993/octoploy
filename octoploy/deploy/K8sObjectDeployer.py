@@ -61,13 +61,16 @@ class K8sObjectDeployer(Log):
 
         current_hash = None
         if current_object is not None:
-            current_hash = current_object.get_annotation(self.HASH_ANNOTATION)
+            obj_state = self._state.get_state(self._app_config.get_name(), k8s_object)
+            if obj_state is not None and obj_state.hash != '':
+                current_hash = obj_state
+            else:  # Fallback to old hash location
+                current_hash = current_object.get_annotation(self.HASH_ANNOTATION)
 
         if current_object is not None and current_hash is None:
             # Item has not been deployed with octoploy, but it does already exist
             self.log.warning(f'{item_path} has no state annotation, assuming no change required')
-            self._api.annotate(item_path, self.HASH_ANNOTATION, hash_val, namespace=namespace)
-            self._state.visit(self._app_config.get_name(), k8s_object)
+            self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             return
 
         if current_hash == hash_val:
@@ -78,12 +81,11 @@ class K8sObjectDeployer(Log):
             self.log.info(f'{item_path} will be updated')
 
         if self._mode.plan:
-            self._state.visit(self._app_config.get_name(), k8s_object)
+            self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             return
 
         self._api.apply(str_repr, namespace=namespace)
-        self._api.annotate(item_path, 'yml-hash', hash_val, namespace=namespace)
-        self._state.visit(self._app_config.get_name(), k8s_object)
+        self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
 
         if k8s_object.is_kind('ConfigMap'):
             self._reload_config()

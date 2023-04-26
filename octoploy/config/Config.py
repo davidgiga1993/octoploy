@@ -52,7 +52,8 @@ class RootConfig(BaseConfig):
             if not self._library.is_library():
                 raise ConfigError('Project ' + inherit + ' referenced as library but is not a library')
 
-        self._state = StateTracking(self.create_api())
+        state_name = self.data.get('stateName', '')
+        self._state = StateTracking(self.create_api(), state_name)
 
     @classmethod
     def load(cls, path: str) -> RootConfig:
