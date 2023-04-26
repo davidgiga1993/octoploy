@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, List, Optional
 
+import yaml
+
 from octoploy.api.Oc import K8sApi
 from octoploy.k8s.BaseObj import BaseObj
 from octoploy.utils.Log import Log
@@ -64,7 +66,11 @@ class StateTracking(Log):
         if item is None:
             return
         cm = item.data
-        state_data = cm.get('data', {}).get('state', [])
+        state_data_str = cm.get('data', {}).get('state', '')
+        state_data = yaml.safe_load(state_data_str)
+        if state_data is None:
+            return
+
         for state_obj in state_data:
             object_state = ObjectState().parse(state_obj)
             self._state[object_state.get_key()] = object_state
@@ -83,7 +89,7 @@ class StateTracking(Log):
                 'name': self._cm_name
             },
             'data': {
-                'state': states
+                'state': YmlWriter.dump(states)
             }
         }
         yml = YmlWriter.dump(data)

@@ -43,13 +43,7 @@ class StateTrackingTest(TestCase):
         self.assertEqual(['apply', '-f', '-'], state_update.args)
         self.assertEqual('''"apiVersion": "v1"
 "data":
-  "state":
-  - "apiVersion": "v1"
-    "context": "ABC"
-    "hash": "dbd4e8fa683fade0a76bcd94c92e2293"
-    "kind": "DeploymentConfig"
-    "name": "ABC"
-    "namespace": "oc-project"
+  "state": "- \\"apiVersion\\": \\"v1\\"\\n  \\"context\\": \\"ABC\\"\\n  \\"hash\\": \\"dbd4e8fa683fade0a76bcd94c92e2293\\"\\n  \\"kind\\": \\"DeploymentConfig\\"\\n  \\"name\\": \\"ABC\\"\\n  \\"namespace\\": \\"oc-project\\"\\n"
 "kind": "ConfigMap"
 "metadata":
   "name": "octoploy-state"
@@ -72,43 +66,7 @@ class StateTrackingTest(TestCase):
         self.assertEqual(['apply', '-f', '-'], state_update.args)
         self.assertEqual('''"apiVersion": "v1"
 "data":
-  "state":
-  - "apiVersion": "v1"
-    "context": "ABC"
-    "hash": "dbd4e8fa683fade0a76bcd94c92e2293"
-    "kind": "DeploymentConfig"
-    "name": "ABC"
-    "namespace": "oc-project"
-  - "apiVersion": "v1"
-    "context": "entity-compare-api"
-    "hash": "4b22586489a2acd974557528748319e5"
-    "kind": "DeploymentConfig"
-    "name": "8080"
-    "namespace": "oc-project"
-  - "apiVersion": "v1"
-    "context": "favorite-api"
-    "hash": "9f183e7c1f686a996fe893b686e70e63"
-    "kind": "DeploymentConfig"
-    "name": "8081"
-    "namespace": "oc-project"
-  - "apiVersion": "v1"
-    "context": "cm-types"
-    "hash": "a48eadd6d347e2591a3929df077aead7"
-    "kind": "ConfigMap"
-    "name": "config"
-    "namespace": "oc-project"
-  - "apiVersion": "v1"
-    "context": "ABC2"
-    "hash": "ea23b547bb9a06ca79d3dc23c3d1d0dd"
-    "kind": "Secret"
-    "name": "secret"
-    "namespace": "oc-project"
-  - "apiVersion": "v1"
-    "context": "var-append"
-    "hash": "e19d6902d55e14e99213b1d112acbde0"
-    "kind": "ConfigMap"
-    "name": "config"
-    "namespace": "oc-project"
+  "state": "- \\"apiVersion\\": \\"v1\\"\\n  \\"context\\": \\"ABC\\"\\n  \\"hash\\": \\"dbd4e8fa683fade0a76bcd94c92e2293\\"\\n  \\"kind\\": \\"DeploymentConfig\\"\\n  \\"name\\": \\"ABC\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"apiVersion\\": \\"v1\\"\\n  \\"context\\": \\"entity-compare-api\\"\\n  \\"hash\\": \\"4b22586489a2acd974557528748319e5\\"\\n  \\"kind\\": \\"DeploymentConfig\\"\\n  \\"name\\": \\"8080\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"apiVersion\\": \\"v1\\"\\n  \\"context\\": \\"favorite-api\\"\\n  \\"hash\\": \\"9f183e7c1f686a996fe893b686e70e63\\"\\n  \\"kind\\": \\"DeploymentConfig\\"\\n  \\"name\\": \\"8081\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"apiVersion\\": \\"v1\\"\\n  \\"context\\": \\"cm-types\\"\\n  \\"hash\\": \\"a48eadd6d347e2591a3929df077aead7\\"\\n  \\"kind\\": \\"ConfigMap\\"\\n  \\"name\\": \\"config\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"apiVersion\\": \\"v1\\"\\n  \\"context\\": \\"ABC2\\"\\n  \\"hash\\": \\"ea23b547bb9a06ca79d3dc23c3d1d0dd\\"\\n  \\"kind\\": \\"Secret\\"\\n  \\"name\\": \\"secret\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"apiVersion\\": \\"v1\\"\\n  \\"context\\": \\"var-append\\"\\n  \\"hash\\": \\"e19d6902d55e14e99213b1d112acbde0\\"\\n  \\"kind\\": \\"ConfigMap\\"\\n  \\"name\\": \\"config\\"\\n  \\"namespace\\": \\"oc-project\\"\\n"
 "kind": "ConfigMap"
 "metadata":
   "name": "octoploy-state"
@@ -131,15 +89,7 @@ class StateTrackingTest(TestCase):
         self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], '''{
   "apiVersion": "v1",
   "data": {
-    "state": [
-      {
-        "apiVersion": "v1",
-        "context": "ABC",
-        "kind": "DeploymentConfig",
-        "name": "ABC",
-        "namespace": "oc-project"
-      }
-    ]
+    "state": "[{\\"apiVersion\\": \\"v1\\", \\"context\\": \\"ABC\\", \\"kind\\": \\"DeploymentConfig\\", \\"name\\": \\"ABC\\", \\"namespace\\": \\"oc-project\\"}]"
   },
   "kind": "ConfigMap",
   "metadata": {
@@ -157,7 +107,7 @@ class StateTrackingTest(TestCase):
         self.assertEqual(['apply', '-f', '-'], state_update.args)
         self.assertEqual('''"apiVersion": "v1"
 "data":
-  "state": []
+  "state": "[]\\n"
 "kind": "ConfigMap"
 "metadata":
   "name": "octoploy-state"
