@@ -5,6 +5,8 @@ from unittest.mock import Mock
 
 from octoploy.api.Oc import Oc
 
+OCTOPLOY_KEY = 'key123'
+
 
 class DummyCmd:
     args = []
@@ -16,10 +18,22 @@ class DummyCmd:
         self.stdin = stdin
         self.namespace = namespace
 
+    def __repr__(self):
+        out = f'{self.args}'
+        if self.stdin is not None:
+            out += f' <- {self.stdin}'
+        return out
+
 
 class DummyK8sApi(Oc):
-    commands = []
-    responds = []
+    def __init__(self):
+        super().__init__()
+        self.commands = []
+        self.responds = []
+        self._respond_not_found = False
+
+    def not_found_by_default(self):
+        self._respond_not_found = True
 
     def respond(self, args: List[str], stdout: '', error=None):
         self.responds.append((args, stdout, error))
@@ -34,6 +48,8 @@ class DummyK8sApi(Oc):
                 if error is not None:
                     raise error
                 return stdout
+        if self._respond_not_found and args[0] == 'get':
+            raise Exception('NotFound')
         return '{}'
 
 

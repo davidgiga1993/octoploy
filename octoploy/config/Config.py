@@ -152,6 +152,7 @@ class RootConfig(BaseConfig):
         :return:
         """
         items = []
+        names = set()
         for dir_item in os.listdir(self._config_root):
             path = os.path.join(self._config_root, dir_item)
             if not os.path.isdir(path):
@@ -165,6 +166,10 @@ class RootConfig(BaseConfig):
             if app_config.is_template() or not app_config.enabled():
                 # Silently skip
                 continue
+            app_name = app_config.get_name()
+            if app_name in names:
+                raise ValueError(f'The app name {app_name} has already been used')
+            names.add(app_name)
             items.append(app_config)
         if self._library is not None:
             items.extend(self._library.load_app_configs())

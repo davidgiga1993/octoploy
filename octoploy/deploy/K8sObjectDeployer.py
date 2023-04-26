@@ -1,8 +1,8 @@
 import hashlib
 
+from octoploy.api.Oc import K8sApi
 from octoploy.config.Config import RootConfig, AppConfig, RunMode
 from octoploy.k8s.BaseObj import BaseObj
-from octoploy.api.Oc import K8sApi
 from octoploy.state.StateTracking import StateTracking
 from octoploy.utils.Log import Log
 from octoploy.utils.YmlWriter import YmlWriter
@@ -54,7 +54,7 @@ class K8sObjectDeployer(Log):
             namespace = self._root_config.get_namespace_name()
         k8s_object.namespace = namespace  # Make sure the object points to the correct namespace
 
-        item_path = k8s_object.kind + '/' + k8s_object.name
+        item_path = f'{k8s_object.kind}/{k8s_object.name}'
         current_object = self._api.get(item_path, namespace=namespace)
         if current_object is None:
             self.log.info(f'{item_path} will be created')
@@ -67,6 +67,7 @@ class K8sObjectDeployer(Log):
             # Item has not been deployed with octoploy, but it does already exist
             self.log.warning(f'{item_path} has no state annotation, assuming no change required')
             self._api.annotate(item_path, self.HASH_ANNOTATION, hash_val, namespace=namespace)
+            self._state.visit(self._app_config.get_name(), k8s_object)
             return
 
         if current_hash == hash_val:
@@ -75,7 +76,6 @@ class K8sObjectDeployer(Log):
 
         if current_object is not None:
             self.log.info(f'{item_path} will be updated')
-        # TODO: Test what happens if library and root have 2 apps with the same name
 
         if self._mode.plan:
             self._state.visit(self._app_config.get_name(), k8s_object)

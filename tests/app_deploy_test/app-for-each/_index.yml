@@ -5,9 +5,9 @@ vars:
 
 forEach:
   - APP_NAME: entity-compare-api
-    PARAM_A: 8080
+    PARAM_A: "8080"
     SECOND: 1
 
   - APP_NAME: favorite-api
-    PARAM_A: 8081
+    PARAM_A: "8081"
     SECOND: 2

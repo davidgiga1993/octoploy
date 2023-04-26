@@ -1,4 +1,5 @@
 import os
+from time import sleep
 from unittest import TestCase
 
 import yaml
@@ -7,6 +8,7 @@ from octoploy.config.Config import RootConfig, RunMode
 from octoploy.deploy.AppDeploy import AppDeployment
 from octoploy.utils.Errors import MissingParam
 from octoploy.utils.Yml import Yml
+from tests import TestUtils
 
 
 class AppDeploymentTest(TestCase):
@@ -76,7 +78,7 @@ KEY STUFF
         self.assertEqual('hello', docs[1]['metadata']['REMAPPED'])
 
     def test_params(self):
-        prj_config = RootConfig.load(os.path.join(self._base_path, 'app_deploy_test'))
+        prj_config = RootConfig.load(os.path.join(self._base_path, 'app_deploy_test_params'))
         app_config = prj_config.load_app_config('app-params')
         runner = AppDeployment(prj_config, app_config, self._mode)
         try:
@@ -99,14 +101,14 @@ KEY STUFF
         """
         Makes s ure secrets without encrypted values are not deployed
         """
-        os.environ['OCTOPLOY_KEY'] = 'key123'
+        os.environ['OCTOPLOY_KEY'] = TestUtils.OCTOPLOY_KEY
         self._deploy('secrets')
         with open(self._tmp_file) as f:
             data = yaml.load(f, Loader=yaml.FullLoader)
         self.assertTrue('plainText' not in data['stringData'])
 
     def test_decryption(self):
-        os.environ['OCTOPLOY_KEY'] = 'key123'
+        os.environ['OCTOPLOY_KEY'] = TestUtils.OCTOPLOY_KEY
         self._deploy('secrets')
         with open(self._tmp_file) as f:
             data = yaml.load(f, Loader=yaml.FullLoader)

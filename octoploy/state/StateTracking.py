@@ -59,6 +59,8 @@ class StateTracking(Log):
 
     def restore(self, namespace: str):
         item = self._k8s_api.get(f'ConfigMap/{self._cm_name}', namespace=namespace)
+        if item is None:
+            return
         cm = item.data
         state_data = cm.get('data', {}).get('state', [])
         for state_obj in state_data:
@@ -66,7 +68,7 @@ class StateTracking(Log):
             self._state[object_state.get_key()] = object_state
 
     def store(self, namespace: str):
-        self.log.debug(f'Persisting state in cm {self._cm_name}')
+        self.log.debug(f'Persisting state in ConfigMap {self._cm_name}')
 
         states = []
         for object_state in self._state.values():
