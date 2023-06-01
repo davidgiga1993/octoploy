@@ -54,7 +54,7 @@ class K8sObjectDeployer(Log):
             namespace = self._root_config.get_namespace_name()
         k8s_object.namespace = namespace  # Make sure the object points to the correct namespace
 
-        item_path = f'{k8s_object.kind}/{k8s_object.name}'
+        item_path = k8s_object.get_fqn()
         current_object = self._api.get(item_path, namespace=namespace)
         if current_object is None:
             self.log.info(f'{item_path} will be created')
