@@ -1,7 +1,5 @@
 import hashlib
 
-import yaml
-
 from octoploy.config.Config import ProjectConfig, AppConfig, RunMode
 from octoploy.k8s.BaseObj import BaseObj
 from octoploy.oc.Oc import K8sApi
@@ -54,7 +52,7 @@ class K8sObjectDeployer(Log):
         if object_namespace is not None:
             self._k8sapi.set_namespace(object_namespace)
 
-        item_name = k8s_object.kind + '/' + k8s_object.name
+        item_name = k8s_object.get_fqn()
         description = self._k8sapi.get(item_name)
         current_hash = None
         if description is not None:
@@ -76,7 +74,7 @@ class K8sObjectDeployer(Log):
 
         self.log.info('Applying update ' + item_name + ' (item has changed)')
         self._k8sapi.apply(str_repr)
-        self._k8sapi.annotate(item_name, 'yml-hash', hash_val)
+        self._k8sapi.annotate(item_name, self.HASH_ANNOTATION, hash_val)
 
         if object_namespace is not None:
             # Use project namespace as default again
