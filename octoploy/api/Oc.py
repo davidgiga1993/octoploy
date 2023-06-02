@@ -197,7 +197,15 @@ class Oc(K8sApi):
         self._exec(['annotate', '--overwrite=true', name, key + '=' + value], namespace=namespace)
 
     def delete(self, name: str, namespace: str):
-        self._exec(['delete', name], namespace=namespace)
+        try:
+            self._exec(['delete', name], namespace=namespace)
+        except Exception as e:
+            # Yes, we all know this is bad...
+            # at that point it would make much more sense to just
+            # use the k8s api directly.
+            if '(NotFound)' in str(e):
+                return
+            raise e
 
     def _exec(self, args, print_out: bool = False, stdin: str = None, namespace: Optional[str] = None) -> str:
         args.insert(0, self._get_bin())

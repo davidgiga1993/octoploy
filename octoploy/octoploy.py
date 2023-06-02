@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import argparse
 
-from octoploy.processing.DecryptionProcessor import DecryptionProcessor
-
 from octoploy.backup.BackupGenerator import BackupGenerator
 from octoploy.config.Config import RootConfig, RunMode
 from octoploy.deploy.AppDeploy import AppDeployment
+from octoploy.processing.DecryptionProcessor import DecryptionProcessor
 from octoploy.utils.Encryption import YmlEncrypter
 from octoploy.utils.Log import Log
 
@@ -115,6 +114,8 @@ def main():
                         help='Enables debug logging')
     parser.add_argument('--skip-secrets', dest='skip_secrets', action='store_true',
                         help="Skips all secret objects and therefore doesn't require a key to be set")
+    parser.add_argument('--deploy-plain-secrets', dest='deploy_plain_text', action='store_true',
+                        help="Deploys plain text secret objects")
     parser.add_argument('-c', '--config-dir', dest='config_dir',
                         help='Path to the folder containing all configurations',
                         default='')
@@ -176,6 +177,7 @@ def main():
         Log.set_debug()
 
     DecryptionProcessor.skip_secrets = args.skip_secrets
+    DecryptionProcessor.deploy_plain_text = args.deploy_plain_text
     args.func(args)
 
 
