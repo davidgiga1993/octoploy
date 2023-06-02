@@ -20,6 +20,11 @@ class ValueLoader:
     def load(self, data: Dict) -> Dict[str, str]:
         pass
 
+    def _resolve_path(self, path: str) -> str:
+        if os.path.isabs(path):
+            return path
+        return self._config.get_file(path)
+
 
 class EnvLoader(ValueLoader):
 
@@ -30,7 +35,7 @@ class EnvLoader(ValueLoader):
 class FileLoader(ValueLoader):
 
     def load(self, data: Dict) -> Dict[str, str]:
-        file = data['file']
+        file = self._resolve_path(data['file'])
         encoding = data.get('encoding', 'utf-8')
         conversion = data.get('conversion')
 
@@ -48,7 +53,7 @@ class FileLoader(ValueLoader):
 class PemLoader(ValueLoader):
 
     def load(self, data: Dict) -> Dict[str, str]:
-        file = data['file']
+        file = self._resolve_path(data['file'])
         cert = Cert(self._config.get_file(file))
         return {
             '_PUBLIC': cert.cert,

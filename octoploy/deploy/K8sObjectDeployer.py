@@ -63,7 +63,7 @@ class K8sObjectDeployer(Log):
         if current_object is not None:
             obj_state = self._state.get_state(self._app_config.get_name(), k8s_object)
             if obj_state is not None and obj_state.hash != '':
-                current_hash = obj_state
+                current_hash = obj_state.hash
             else:  # Fallback to old hash location
                 current_hash = current_object.get_annotation(self.HASH_ANNOTATION)
 
@@ -74,6 +74,7 @@ class K8sObjectDeployer(Log):
             return
 
         if current_hash == hash_val:
+            self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             self.log.debug(f"{item_path} hasn't changed")
             return
 

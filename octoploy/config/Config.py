@@ -3,9 +3,9 @@ from __future__ import annotations
 import os
 from typing import Optional, Dict, List
 
+from octoploy.api.Oc import Oc, K8, K8sApi
 from octoploy.config.AppConfig import AppConfig
 from octoploy.config.BaseConfig import BaseConfig
-from octoploy.api.Oc import Oc, K8, K8sApi
 from octoploy.processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 from octoploy.state.StateTracking import StateTracking
@@ -86,12 +86,12 @@ class RootConfig(BaseConfig):
         Returns the pre processor for the current config
         """
         mode = self._get_mode()
-        if mode == 'k8':
+        if mode == 'k8s' or mode == 'k8s':
             return OcToK8PreProcessor()
         return DataPreProcessor()
 
     def _get_mode(self) -> str:
-        return self.data.get('mode', 'oc')
+        return self.data.get('mode', 'k8s')
 
     def create_api(self) -> K8sApi:
         """
@@ -104,7 +104,7 @@ class RootConfig(BaseConfig):
         mode = self._get_mode()
         if mode == 'oc':
             oc = Oc()
-        elif mode == 'k8':
+        elif mode == 'k8s' or mode == 'k8':
             oc = K8()
         else:
             raise ValueError(f'Invalid mode: {mode}')

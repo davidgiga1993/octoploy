@@ -8,7 +8,7 @@ from octoploy.processing.K8sObjectMerge import K8sObjectMerge
 class K8sObjectMergeTest(TestCase):
 
     def test_append_sidecar_container(self):
-        existing = '''kind: DeploymentConfig
+        existing = '''kind: Deployment
 apiVersion: v1
 metadata:
   name: "${DC_NAME}"
@@ -33,7 +33,7 @@ spec:
               mountPath: /java/java-cacerts
 '''
         new = '''
-kind: DeploymentConfig
+kind: Deployment
 spec:
   template:
     spec:
@@ -63,7 +63,7 @@ spec:
         validate(new_data)
 
     def test_merge_same_container(self):
-        existing = '''kind: DeploymentConfig
+        existing = '''kind: Deployment
 apiVersion: v1
 metadata:
   name: "${DC_NAME}"
@@ -117,7 +117,7 @@ spec:
           name: '${DC_NAME}:prod'
 '''
         new = '''
-kind: DeploymentConfig
+kind: Deployment
 metadata:
   name: "${DC_NAME}"
 

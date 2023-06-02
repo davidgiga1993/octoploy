@@ -287,38 +287,38 @@ Here is a minimal example:
 
 ```yml
 # examples/nsq-template/dc.yml
-kind: DeploymentConfig
-apiVersion: v1
+kind: Deployment
+apiVersion: apps/v1
 spec:
   template:
     spec:
-    containers:
-      - name: "nsqd"
-      image: "nsqio/nsq"
+      containers:
+        - name: "nsqd"
+        image: "nsqio/nsq"
 ```
 
 ```yml
 # examples/my-app/dc.yml
-kind: DeploymentConfig
-apiVersion: v1
+kind: Deployment
+apiVersion: apps/v1
 metadata:
-  name: "${DC_NAME}"
+  name: "${APP_NAME}"
 
 spec:
   replicas: 1
   selector:
-    name: "${DC_NAME}"
+    name: "${APP_NAME}"
   strategy:
-    type: Rolling
+    type: RollingUpdate
 
   template:
     metadata:
       labels:
-        name: "${DC_NAME}"
+        name: "${APP_NAME}"
 
     spec:
       containers:
-        - name: "${DC_NAME}"
+        - name: "${APP_NAME}"
           image: "docker-registry.default.svc:5000/oc-project/my-app:prod"
 ```
 
@@ -327,26 +327,26 @@ If we now apply the nsq-template to our app using `postApplyTemplates: [nsq-temp
 
 ```yml
 # Merged result after applying template
-kind: DeploymentConfig
-apiVersion: v1
+kind: Deployment
+apiVersion: apps/v1
 metadata:
-  name: "${DC_NAME}"
+  name: "${APP_NAME}"
 
 spec:
   replicas: 1
   selector:
-    name: "${DC_NAME}"
+    name: "${APP_NAME}"
   strategy:
-    type: Rolling
+    type: RollingUpdate
 
   template:
     metadata:
       labels:
-        name: "${DC_NAME}"
+        name: "${APP_NAME}"
 
     spec:
       containers:
-        - name: "${DC_NAME}"
+        - name: "${APP_NAME}"
           image: "docker-registry.default.svc:5000/oc-project/my-app:prod"
         # This is the part of the template
         - name: "nsqd"
