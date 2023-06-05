@@ -108,7 +108,7 @@ class StateTracking(Log):
         return items
 
     def get_state(self, context_name: str, k8s_object: BaseObj) -> Optional[ObjectState]:
-        state = self._k8s_to_state(context_name, k8s_object, '')
+        state = self._k8s_to_state(context_name, k8s_object)
         return self._state.get(state.get_key())
 
     def visit(self, context_name: str, k8s_object: BaseObj, hash_val: str):
@@ -117,19 +117,22 @@ class StateTracking(Log):
         If the object is not yet in the state it will be added
         :param context_name: Name of the state context
         :param k8s_object: Kubernetes object
-        :param hash_val: Hash value of the object
+        :param hash_val: The new hash value of the object.
         """
-        state = self._k8s_to_state(context_name, k8s_object, hash_val)
+        state = self._k8s_to_state(context_name, k8s_object)
         existing_state = self._state.get(state.get_key())
         if existing_state is None:
+            state.hash = hash_val
             self._state[state.get_key()] = state
             return
+        existing_state.hash = hash_val
         existing_state.visited = True
 
     def remove(self, object_state: ObjectState):
         del self._state[object_state.get_key()]
 
-    def _k8s_to_state(self, context_name: str, k8s_object: BaseObj, hash_val: str) -> ObjectState:
+    @staticmethod
+    def _k8s_to_state(context_name: str, k8s_object: BaseObj) -> ObjectState:
         api_version = k8s_object.api_version
         kind = k8s_object.kind
         name = k8s_object.name
@@ -141,5 +144,4 @@ class StateTracking(Log):
         state.kind = kind
         state.name = name
         state.visited = True
-        state.hash = hash_val
         return state

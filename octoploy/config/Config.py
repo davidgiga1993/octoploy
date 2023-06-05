@@ -68,7 +68,7 @@ class RootConfig(BaseConfig):
         self._state.restore(self.get_namespace_name())
 
     def persist_state(self, run_mode: RunMode):
-        if run_mode.dry_run:
+        if run_mode.dry_run or run_mode.plan:
             return
         self._state.store(self.get_namespace_name())
 
