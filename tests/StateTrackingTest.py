@@ -1,5 +1,6 @@
 import json
 import os
+from typing import List
 from unittest import TestCase
 
 import yaml
@@ -98,13 +99,12 @@ class StateTrackingTest(TestCase):
         self.assertEqual(['get', 'ConfigMap/octoploy-state', '-o', 'json'], self._dummy_api.commands[0].args)
         state_update = self._dummy_api.commands[-1]
         self.assertEqual(['apply', '-f', '-'], state_update.args)
-        self.assertEqual('''"apiVersion": "v1"
-"data":
-  "state": "- \\"context\\": \\"ABC\\"\\n  \\"hash\\": \\"d7e628adce4fa1b75b861be76920b6dc\\"\\n  \\"kind\\": \\"Deployment\\"\\n  \\"name\\": \\"ABC\\"\\n  \\"namespace\\": \\"oc-project\\"\\n"
-"kind": "ConfigMap"
-"metadata":
-  "name": "octoploy-state"
-''', state_update.stdin)
+        self.assertStateEqual([{"context": "ABC",
+                                "hash": "d7e628adce4fa1b75b861be76920b6dc",
+                                "kind": "Deployment",
+                                "name": "ABC",
+                                "namespace": "oc-project",
+                                }], state_update.stdin)
 
     def test_deploy_all_then_app(self):
         """
@@ -121,13 +121,38 @@ class StateTrackingTest(TestCase):
 
         state_update = self._dummy_api.commands[-1]
         self.assertEqual(['apply', '-f', '-'], state_update.args)
-        self.assertEqual('''"apiVersion": "v1"
-"data":
-  "state": "- \\"context\\": \\"ABC\\"\\n  \\"hash\\": \\"d7e628adce4fa1b75b861be76920b6dc\\"\\n  \\"kind\\": \\"Deployment\\"\\n  \\"name\\": \\"ABC\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"entity-compare-api\\"\\n  \\"hash\\": \\"8b3e2f9b6499582cc3e4fe66681a7850\\"\\n  \\"kind\\": \\"Deployment\\"\\n  \\"name\\": \\"8080\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"favorite-api\\"\\n  \\"hash\\": \\"96204a555b80b50b3cf49e5684f3daa9\\"\\n  \\"kind\\": \\"Deployment\\"\\n  \\"name\\": \\"8081\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"cm-types\\"\\n  \\"hash\\": \\"a48eadd6d347e2591a3929df077aead7\\"\\n  \\"kind\\": \\"ConfigMap\\"\\n  \\"name\\": \\"config\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"ABC2\\"\\n  \\"hash\\": \\"ea23b547bb9a06ca79d3dc23c3d1d0dd\\"\\n  \\"kind\\": \\"Secret\\"\\n  \\"name\\": \\"secret\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"var-append\\"\\n  \\"hash\\": \\"e19d6902d55e14e99213b1d112acbde0\\"\\n  \\"kind\\": \\"ConfigMap\\"\\n  \\"name\\": \\"config\\"\\n  \\"namespace\\": \\"oc-project\\"\\n"
-"kind": "ConfigMap"
-"metadata":
-  "name": "octoploy-state"
-''', state_update.stdin)
+        self.assertStateEqual([
+            {"context": "ABC",
+             "hash": "d7e628adce4fa1b75b861be76920b6dc",
+             "kind": "Deployment",
+             "name": "ABC",
+             "namespace": "oc-project"},
+            {"context": "entity-compare-api",
+             "hash": "8b3e2f9b6499582cc3e4fe66681a7850",
+             "kind": "Deployment",
+             "name": "8080",
+             "namespace": "oc-project"},
+            {"context": "favorite-api",
+             "hash": "96204a555b80b50b3cf49e5684f3daa9",
+             "kind": "Deployment",
+             "name": "8081",
+             "namespace": "oc-project"},
+            {"context": "cm-types",
+             "hash": "a48eadd6d347e2591a3929df077aead7",
+             "kind": "ConfigMap",
+             "name": "config",
+             "namespace": "oc-project"},
+            {"context": "ABC2",
+             "hash": "ea23b547bb9a06ca79d3dc23c3d1d0dd",
+             "kind": "Secret",
+             "name": "secret",
+             "namespace": "oc-project"},
+            {"context": "var-append",
+             "hash": "e19d6902d55e14e99213b1d112acbde0",
+             "kind": "ConfigMap",
+             "name": "config",
+             "namespace": "oc-project"},
+        ], state_update.stdin)
 
         # Now deploy a single app
         current_state = yaml.safe_load(state_update.stdin)
@@ -155,14 +180,37 @@ class StateTrackingTest(TestCase):
 
         state_update = self._dummy_api.commands[-1]
         self.assertEqual(['apply', '-f', '-'], state_update.args)
-        self.assertEqual('''"apiVersion": "v1"
-"data":
-  "state": "- \\"context\\": \\"ABC\\"\\n  \\"hash\\": \\"d7e628adce4fa1b75b861be76920b6dc\\"\\n  \\"kind\\": \\"Deployment\\"\\n  \\"name\\": \\"ABC\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"entity-compare-api\\"\\n  \\"hash\\": \\"8b3e2f9b6499582cc3e4fe66681a7850\\"\\n  \\"kind\\": \\"Deployment\\"\\n  \\"name\\": \\"8080\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"favorite-api\\"\\n  \\"hash\\": \\"96204a555b80b50b3cf49e5684f3daa9\\"\\n  \\"kind\\": \\"Deployment\\"\\n  \\"name\\": \\"8081\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"cm-types\\"\\n  \\"hash\\": \\"a48eadd6d347e2591a3929df077aead7\\"\\n  \\"kind\\": \\"ConfigMap\\"\\n  \\"name\\": \\"config\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"ABC2\\"\\n  \\"hash\\": \\"ea23b547bb9a06ca79d3dc23c3d1d0dd\\"\\n  \\"kind\\": \\"Secret\\"\\n  \\"name\\": \\"secret\\"\\n  \\"namespace\\": \\"oc-project\\"\\n- \\"context\\": \\"var-append\\"\\n  \\"hash\\": \\"e19d6902d55e14e99213b1d112acbde0\\"\\n  \\"kind\\": \\"ConfigMap\\"\\n  \\"name\\": \\"config\\"\\n  \\"namespace\\": \\"oc-project\\"\\n"
-"kind": "ConfigMap"
-"metadata":
-  "name": "octoploy-state"
-''', state_update.stdin)
-
+        self.assertStateEqual([{"context": "ABC",
+                                "hash": "d7e628adce4fa1b75b861be76920b6dc",
+                                "kind": "Deployment",
+                                "name": "ABC",
+                                "namespace": "oc-project"},
+                               {"context": "entity-compare-api",
+                                "hash": "8b3e2f9b6499582cc3e4fe66681a7850",
+                                "kind": "Deployment",
+                                "name": "8080",
+                                "namespace": "oc-project"},
+                               {"context": "favorite-api",
+                                "hash": "96204a555b80b50b3cf49e5684f3daa9",
+                                "kind": "Deployment",
+                                "name": "8081",
+                                "namespace": "oc-project"},
+                               {"context": "cm-types",
+                                "hash": "a48eadd6d347e2591a3929df077aead7",
+                                "kind": "ConfigMap",
+                                "name": "config",
+                                "namespace": "oc-project"},
+                               {"context": "ABC2",
+                                "hash": "ea23b547bb9a06ca79d3dc23c3d1d0dd",
+                                "kind": "Secret",
+                                "name": "secret",
+                                "namespace": "oc-project"},
+                               {"context": "var-append",
+                                "hash": "e19d6902d55e14e99213b1d112acbde0",
+                                "kind": "ConfigMap",
+                                "name": "config",
+                                "namespace": "oc-project"},
+                               ], state_update.stdin)
         # Now deploy a single app
         current_state = yaml.safe_load(state_update.stdin)
         self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], json.dumps(current_state))
@@ -203,10 +251,9 @@ class StateTrackingTest(TestCase):
 
         state_update = self._dummy_api.commands[2]
         self.assertEqual(['apply', '-f', '-'], state_update.args)
-        self.assertEqual('''"apiVersion": "v1"
-"data":
-  "state": "[]\\n"
-"kind": "ConfigMap"
-"metadata":
-  "name": "octoploy-state"
-''', state_update.stdin)
+        self.assertStateEqual([], state_update.stdin)
+
+    def assertStateEqual(self, expected: List[any], data: str):
+        k8s_object = yaml.safe_load(data)
+        state = yaml.safe_load(k8s_object['data']['state'])
+        self.assertEqual(expected, state)
