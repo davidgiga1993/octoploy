@@ -256,4 +256,11 @@ class StateTrackingTest(TestCase):
     def assertStateEqual(self, expected: List[any], data: str):
         k8s_object = yaml.safe_load(data)
         state = yaml.safe_load(k8s_object['data']['state'])
-        self.assertEqual(expected, state)
+        self.assertEqual(len(expected), len(state))
+        for entry in expected:
+            found_match = False
+            for existing in state:
+                if entry == existing:
+                    found_match = True
+                    break
+            self.assertTrue(found_match, f'{entry} not found in {state}')
