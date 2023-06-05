@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import List, Optional, Dict
 
 from octoploy.config.BaseConfig import BaseConfig
-from octoploy.config.ConfigMap import ConfigMap
+from octoploy.config.DynamicConfigMap import DynamicConfigMap
 from octoploy.config.DeploymentActionConfig import DeploymentActionConfig
 from octoploy.utils.DictUtils import DictUtils
 from octoploy.utils.Errors import MissingVar
@@ -18,11 +18,11 @@ class AppConfig(BaseConfig):
         super().__init__(path, external_vars)
         self._config_root = config_root
 
-    def get_config_maps(self) -> List[ConfigMap]:
+    def get_config_maps(self) -> List[DynamicConfigMap]:
         """
         Returns additional config maps which should contain the content of a file
         """
-        return [ConfigMap(data) for data in self.data.get('configmaps', [])]
+        return [DynamicConfigMap(data) for data in self.data.get('configmaps', [])]
 
     def enabled(self) -> bool:
         """
@@ -54,7 +54,7 @@ class AppConfig(BaseConfig):
             assert isinstance(instance_vars, dict)
             dc_name = instance_vars.get('APP_NAME')
             if dc_name is None:
-                raise MissingVar('APP_NAME not defined in forEach for app ' + str(self.get_dc_name()))
+                raise MissingVar('APP_NAME not defined in forEach for app ' + str(self.get_name()))
 
             config = AppConfig(self._config_root, None, instance_vars)
             # Inherit all parameters
@@ -90,10 +90,10 @@ class AppConfig(BaseConfig):
         """
         return [DeploymentActionConfig(self, x) for x in self.data.get('on-config-change', [])]
 
-    def get_dc_name(self) -> Optional[str]:
+    def get_name(self) -> Optional[str]:
         """
         Returns the app name
-        :return: Name
+        :return: Name or None if not defined
         """
         name = DictUtils.get(self.data, 'name')
         if name is not None:
@@ -106,7 +106,7 @@ class AppConfig(BaseConfig):
         :return: Key, value map
         """
         items = super().get_replacements()
-        dc_name = self.get_dc_name()
+        dc_name = self.get_name()
         if dc_name is not None:
             items.update({
                 'APP_NAME': dc_name,

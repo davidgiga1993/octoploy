@@ -2,13 +2,13 @@ from unittest import TestCase
 
 import yaml
 
-from octoploy.processing.OcObjectMerge import OcObjectMerge
+from octoploy.processing.K8sObjectMerge import K8sObjectMerge
 
 
-class OcObjectMergeTest(TestCase):
+class K8sObjectMergeTest(TestCase):
 
     def test_append_sidecar_container(self):
-        existing = '''kind: DeploymentConfig
+        existing = '''kind: Deployment
 apiVersion: v1
 metadata:
   name: "${DC_NAME}"
@@ -33,14 +33,14 @@ spec:
               mountPath: /java/java-cacerts
 '''
         new = '''
-kind: DeploymentConfig
+kind: Deployment
 spec:
   template:
     spec:
       containers:
         - name: "sidecar-container"
 '''
-        merge = OcObjectMerge()
+        merge = K8sObjectMerge()
         data = yaml.safe_load(existing)
         merge.merge(data, yaml.safe_load(new))
 
@@ -63,7 +63,7 @@ spec:
         validate(new_data)
 
     def test_merge_same_container(self):
-        existing = '''kind: DeploymentConfig
+        existing = '''kind: Deployment
 apiVersion: v1
 metadata:
   name: "${DC_NAME}"
@@ -117,7 +117,7 @@ spec:
           name: '${DC_NAME}:prod'
 '''
         new = '''
-kind: DeploymentConfig
+kind: Deployment
 metadata:
   name: "${DC_NAME}"
 
@@ -139,7 +139,7 @@ spec:
           persistentVolumeClaim:
             claimName: "pvc-crawler-packages"'''
 
-        merge = OcObjectMerge()
+        merge = K8sObjectMerge()
         data = yaml.safe_load(existing)
         merge.merge(data, yaml.safe_load(new))
 

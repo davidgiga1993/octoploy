@@ -1,3 +1,4 @@
 kind: DC
+apiVersion: v1
 someObj:
   param: "${SomeParam}"

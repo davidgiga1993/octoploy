@@ -4,7 +4,7 @@ import subprocess
 from abc import abstractmethod
 from typing import Optional, List
 
-from octoploy.oc.Model import ItemDescription, PodData
+from octoploy.api.Model import ItemDescription, PodData
 from octoploy.utils.Log import Log
 
 
@@ -13,11 +13,12 @@ class K8sApi(Log):
         super().__init__('K8Api')
 
     @abstractmethod
-    def tag(self, source: str, dest: str):
+    def tag(self, source: str, dest: str, namespace: Optional[str] = None):
         """
         Tags the given image stream (OC only!)
         :param source: Source tag
         :param dest: Destination tag
+        :param namespace: Namespace
         """
         raise NotImplemented
 
@@ -28,49 +29,56 @@ class K8sApi(Log):
         """
 
     @abstractmethod
-    def get(self, name: str) -> Optional[ItemDescription]:
+    def get(self, name: str, namespace: Optional[str] = None) -> Optional[ItemDescription]:
         """
         Returns the given item
         :param name: Name
+        :param namespace: Namespace
         :return: Data (if found)
         """
         raise NotImplemented
 
     @abstractmethod
-    def apply(self, yml: str) -> str:
+    def apply(self, yml: str, namespace: Optional[str] = None) -> str:
         """
         Applies the given yml file
         :param yml: Yml file
+        :param namespace: Namespace
         :return: Stdout
         """
         raise NotImplemented
 
     @abstractmethod
-    def get_pod(self, dc_name: str = None, pod_name: str = None) -> Optional[PodData]:
+    def get_pod(self, dc_name: str = None, pod_name: str = None,
+                namespace: Optional[str] = None) -> Optional[PodData]:
         """
         Returns a pod by deployment name or pod name
         :param dc_name: Deployment name
         :param pod_name: Pod name
+        :param namespace: Namespace
         :return: Pod (if found)
         :raise Exception: More than one pod found
         """
         raise NotImplemented
 
     @abstractmethod
-    def get_pods(self, dc_name: str = None, pod_name: str = None) -> List[PodData]:
+    def get_pods(self, dc_name: str = None, pod_name: str = None,
+                 namespace: Optional[str] = None) -> List[PodData]:
         """
         Returns all pods which match the given deployment name or pod name
         :param dc_name: Deployment name
         :param pod_name: Pod name
+        :param namespace: Namespace
         :return: Pods
         """
         raise NotImplemented
 
     @abstractmethod
-    def rollout(self, name: str):
+    def rollout(self, name: str, namespace: Optional[str] = None):
         """
         Re-Deploys the latest DC with the given name
         :param name: Deployment name
+        :param namespace: Namespace
         """
         raise NotImplemented
 
@@ -85,14 +93,6 @@ class K8sApi(Log):
         raise NotImplemented
 
     @abstractmethod
-    def set_namespace(self, namespace: str):
-        """
-        Changes the default project / namespace
-        :param namespace: Namespace name
-        """
-        raise NotImplemented
-
-    @abstractmethod
     def switch_context(self, context: str):
         """
         Changes the configuration context
@@ -101,12 +101,21 @@ class K8sApi(Log):
         raise NotImplemented
 
     @abstractmethod
-    def annotate(self, name: str, key: str, value: str):
+    def annotate(self, name: str, key: str, value: str, namespace: Optional[str] = None):
         """
         Add / updates the annotation at the given item
         :param name: Name
         :param key: Annotation key
         :param value: Annotation value
+        :param namespace: Namespace
+        """
+        raise NotImplemented
+
+    def delete(self, name: str, namespace: str):
+        """
+        Deletes the given item
+        :param name: Name
+        :param namespace: Namespace
         """
         raise NotImplemented
 
@@ -116,12 +125,12 @@ class Oc(K8sApi):
         lines = self._exec(['get', 'namespaces', '-o', 'name'])
         return lines.splitlines()
 
-    def tag(self, source: str, dest: str):
-        self._exec(['tag', source, dest], print_out=True)
+    def tag(self, source: str, dest: str, namespace: Optional[str] = None):
+        self._exec(['tag', source, dest], print_out=True, namespace=namespace)
 
-    def get(self, name: str) -> Optional[ItemDescription]:
+    def get(self, name: str, namespace: Optional[str] = None) -> Optional[ItemDescription]:
         try:
-            json_str = self._exec(['get', name, '-o', 'json'])
+            json_str = self._exec(['get', name, '-o', 'json'], namespace=namespace)
         except Exception as e:
             if 'NotFound' in str(e):
                 return None
@@ -129,18 +138,18 @@ class Oc(K8sApi):
 
         return ItemDescription(json.loads(json_str))
 
-    def apply(self, yml: str) -> str:
-        return self._exec(['apply', '-f', '-'], stdin=yml)
+    def apply(self, yml: str, namespace: Optional[str] = None) -> str:
+        return self._exec(['apply', '-f', '-'], stdin=yml, namespace=namespace)
 
-    def get_pod(self, dc_name: str = None, pod_name: str = None) -> Optional[PodData]:
-        pods = self.get_pods(dc_name=dc_name, pod_name=pod_name)
+    def get_pod(self, dc_name: str = None, pod_name: str = None, namespace: Optional[str] = None) -> Optional[PodData]:
+        pods = self.get_pods(dc_name=dc_name, pod_name=pod_name, namespace=namespace)
         if len(pods) == 0:
             return None
         if len(pods) > 1:
             raise Exception('More than one match found')
         return pods[0]
 
-    def get_pods(self, dc_name: str = None, pod_name: str = None) -> List[PodData]:
+    def get_pods(self, dc_name: str = None, pod_name: str = None, namespace: Optional[str] = None) -> List[PodData]:
         pods = []
         json_str = self._exec(['get', 'pods', '-o', 'json'])
         data = json.loads(json_str)
@@ -168,29 +177,42 @@ class Oc(K8sApi):
 
         return pods
 
-    def rollout(self, name: str):
+    def rollout(self, name: str, namespace: Optional[str] = None):
         """
         Re-Deploys the latest DC with the given name
         :param name: DC name
+        :param namespace: Namespace
         """
-        self._exec(['rollout', 'latest', name])
+        self._exec(['rollout', 'latest', name], namespace=namespace)
 
-    def exec(self, pod_name: str, cmd: str, args: List[str]):
-        proc_args = ['exec', pod_name, '--', cmd]
+    def exec(self, pod_name: str, cmd: str, args: List[str], namespace: Optional[str] = None):
+        proc_args = ['exec', pod_name, '--namespace', namespace, '--', cmd]
         proc_args.extend(args)
         self._exec(proc_args, print_out=True)
-
-    def set_namespace(self, namespace: str):
-        self._exec(['project', namespace])
 
     def switch_context(self, context: str):
         raise NotImplemented('Not available for openshift')
 
-    def annotate(self, name: str, key: str, value: str):
-        self._exec(['annotate', '--overwrite=true', name, key + '=' + value])
+    def annotate(self, name: str, key: str, value: str, namespace: Optional[str] = None):
+        self._exec(['annotate', '--overwrite=true', name, key + '=' + value], namespace=namespace)
 
-    def _exec(self, args, print_out: bool = False, stdin: str = None) -> str:
+    def delete(self, name: str, namespace: str):
+        try:
+            self._exec(['delete', name], namespace=namespace)
+        except Exception as e:
+            # Yes, we all know this is bad...
+            # at that point it would make much more sense to just
+            # use the k8s api directly.
+            if '(NotFound)' in str(e):
+                return
+            raise e
+
+    def _exec(self, args, print_out: bool = False, stdin: str = None, namespace: Optional[str] = None) -> str:
         args.insert(0, self._get_bin())
+        if namespace is not None:
+            args.append('--namespace')
+            args.append(namespace)
+
         if print_out:
             print(str(args))
 
@@ -216,23 +238,19 @@ class Oc(K8sApi):
 
 
 class K8(Oc):
-    _namespace: str = ''
+    def rollout(self, name: str, namespace: Optional[str] = None):
+        self._exec(['rollout', 'restart', 'deployments', name], namespace=namespace)
 
-    def rollout(self, name: str):
-        self._exec(['rollout', 'restart', 'deployments', name])
-
-    def tag(self, source: str, dest: str):
+    def tag(self, source: str, dest: str, namespace: Optional[str] = None):
         raise NotImplemented('Not available for k8')
-
-    def set_namespace(self, namespace: str):
-        self._namespace = namespace
 
     def switch_context(self, context: str):
         self._exec(['config', 'use-context', context])
 
-    def _exec(self, args, print_out: bool = False, stdin: str = None):
-        if self._namespace != '':
-            args.append('--namespace=' + self._namespace)
+    def _exec(self, args, print_out: bool = False, stdin: str = None, namespace: Optional[str] = None):
+        if namespace is not None:
+            args.append('--namespace')
+            args.append(namespace)
         return super()._exec(args, print_out, stdin)
 
     def _get_bin(self) -> str:

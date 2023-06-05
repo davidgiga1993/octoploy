@@ -5,9 +5,10 @@ from octoploy.processing.TreeWalker import TreeProcessor, TreeWalker
 from octoploy.utils import Utils
 from octoploy.utils.Encryption import Encryption
 from octoploy.utils.Errors import SkipObject
+from octoploy.utils.Log import Log
 
 
-class DecryptionProcessor(TreeProcessor):
+class DecryptionProcessor(TreeProcessor, Log):
     """
     Processes all objects, and replaces any encrypted placeholders.
     If skip_secrets is True, all secret object types wil lbe skipped
@@ -18,9 +19,15 @@ class DecryptionProcessor(TreeProcessor):
     Indicates if all secrets should be skipped
     """
 
+    deploy_plain_text: bool = False
+    """
+    Indicates if plain text secrets should be skipped
+    """
+
     _secret_obj: Optional[SecretObj]
 
     def __init__(self):
+        super().__init__(__name__)
         self.encryption = Encryption()
 
     def process(self, root: Dict[str, any]):
@@ -44,9 +51,13 @@ class DecryptionProcessor(TreeProcessor):
             # Also, it may increase chances of accidentally storing them in vcs
             if key in self._secret_obj.base64_data or \
                     key in self._secret_obj.string_data:
-                raise SkipObject('Secret contains plain text - use "octoploy encrypt" to encrypt your secrets')
+                if not DecryptionProcessor.deploy_plain_text:
+                    raise SkipObject(
+                        f'Secret {self._secret_obj.get_fqn()} contains plain text - '
+                        f'use "octoploy encrypt" to encrypt your secrets')
 
             return value
+
         if DecryptionProcessor.skip_secrets and self._secret_obj is not None:
             # We should skip the secret
             raise SkipObject('Secrets should be skipped')

@@ -5,7 +5,7 @@ from typing import List
 
 import yaml
 
-from octoploy.config.Config import ProjectConfig, AppConfig, RunMode
+from octoploy.config.Config import RootConfig, AppConfig, RunMode
 from octoploy.deploy.DeploymentBundle import DeploymentBundle
 from octoploy.deploy.K8sObjectDeployer import K8sObjectDeployer
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
@@ -16,10 +16,10 @@ from octoploy.utils.Yml import Yml
 
 class AppDeployment:
     """
-    Deploys a single application
+    Deploys a single application (aka all yml files inside an app directory)
     """
 
-    def __init__(self, root_config: ProjectConfig, app_config: AppConfig, mode: RunMode):
+    def __init__(self, root_config: RootConfig, app_config: AppConfig, mode: RunMode):
         self._root_config = root_config
         self._app_config = app_config
         self._mode = mode
@@ -43,7 +43,7 @@ class AppDeployRunnerFactory:
     Creates AppDeployRunner objects
     """
 
-    def __init__(self, root_config: ProjectConfig, mode: RunMode):
+    def __init__(self, root_config: RootConfig, mode: RunMode):
         self._root_config = root_config
         self._mode = mode
 
@@ -64,7 +64,7 @@ class AppDeployRunner(Log):
     Executes the deployment of a single app
     """
 
-    def __init__(self, root_config: ProjectConfig, app_config: AppConfig, mode: RunMode = RunMode()):
+    def __init__(self, root_config: RootConfig, app_config: AppConfig, mode: RunMode = RunMode()):
         super().__init__()
         self._root_config = root_config
         self._app_config = app_config
@@ -78,7 +78,7 @@ class AppDeployRunner(Log):
         if not self._app_config.enabled():
             raise ValueError('App is disabled')
         if self._app_config.is_template():
-            raise ValueError('App is a template and can\'t be deployed')
+            raise ValueError("App is a template and can't be deployed")
 
         # Resolve all templating references
         template_processor = self._app_config.get_template_processor()
@@ -99,14 +99,15 @@ class AppDeployRunner(Log):
                     self.log.warning(f'Skipping object: {e}')
                     self._bundle.objects.remove(data)
 
-        k8sapi = self._root_config.create_api()
+        api = self._root_config.create_api()
         if self._mode.out_file is not None:
             self._bundle.dump_objects(self._mode.out_file)
+
         if self._mode.dry_run:
             return
 
-        self.log.info(f'Checking {self._app_config.get_dc_name()}')
-        object_deployer = K8sObjectDeployer(self._root_config, k8sapi, self._app_config, mode=self._mode)
+        self.log.info(f'Checking {self._app_config.get_name()}')
+        object_deployer = K8sObjectDeployer(self._root_config, api, self._app_config, mode=self._mode)
         self._bundle.deploy(object_deployer)
 
     def _apply_templates(self, template_names: List[str], template_processor: YmlTemplateProcessor):

@@ -1,6 +1,6 @@
 import os
 
-from octoploy.config.Config import ProjectConfig
+from octoploy.config.Config import RootConfig
 from octoploy.utils.Log import Log
 
 
@@ -9,7 +9,7 @@ class BackupGenerator(Log):
     Very crude backup implementation.
     """
 
-    def __init__(self, config: ProjectConfig):
+    def __init__(self, config: RootConfig):
         super().__init__()
         self._config = config
 
@@ -23,15 +23,14 @@ class BackupGenerator(Log):
         for namespace in namespaces:
             namespace = namespace.split('/')[1]
             self.log.info(f'Backup up namespace {namespace}')
-            oc.set_namespace(namespace)
             for api in apis:
                 try:
-                    names = oc._exec(['get', api, '-o', 'name']).splitlines()
+                    names = oc._exec(['get', api, '-o', 'name'], namespace=namespace).splitlines()
                 except Exception:
                     continue
                 self.log.info(f'Backing up api {api}')
                 for item in names:
-                    output = oc._exec(['get', item, '-o', 'yaml'])
+                    output = oc._exec(['get', item, '-o', 'yaml'], namespace=namespace)
                     file_name = namespace + '_' + item.replace('/', '_') + '.yaml'
                     with open(os.path.join(dir_name, file_name), 'w') as f:
                         f.write(output)

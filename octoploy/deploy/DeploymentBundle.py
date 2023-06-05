@@ -10,7 +10,7 @@ from octoploy.deploy.K8sObjectDeployer import K8sObjectDeployer
 from octoploy.k8s.BaseObj import BaseObj
 from octoploy.processing.DataPreProcessor import DataPreProcessor
 from octoploy.processing.DecryptionProcessor import DecryptionProcessor
-from octoploy.processing.OcObjectMerge import OcObjectMerge
+from octoploy.processing.K8sObjectMerge import K8sObjectMerge
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 from octoploy.utils.Log import Log
 from octoploy.utils.YmlWriter import YmlWriter
@@ -42,7 +42,7 @@ class DeploymentBundle(Log):
         if template_processor is not None:
             template_processor.process(data)
 
-        merger = OcObjectMerge()
+        merger = K8sObjectMerge()
         # Check if the new data can be merged into any existing objects
         for item in self.objects:
             if merger.merge(item, data):
@@ -54,10 +54,10 @@ class DeploymentBundle(Log):
 
     def deploy(self, deploy_runner: K8sObjectDeployer):
         """
-        Deploys all object
+        Deploys all objects in this bundle
         :param deploy_runner: Deployment runner which should be used
         """
-        deploy_runner.select_namespace()
+        deploy_runner.select_context()
 
         # First sort the objects, we want "deployments" to be the last object type
         # so all prerequisites are available
@@ -72,6 +72,8 @@ class DeploymentBundle(Log):
         self.objects.sort(key=sorting)
         for item in self.objects:
             deploy_runner.deploy_object(item)
+
+        deploy_runner.delete_abandoned_objects()
 
     def dump_objects(self, path: str):
         """

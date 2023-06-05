@@ -287,38 +287,38 @@ Here is a minimal example:
 
 ```yml
 # examples/nsq-template/dc.yml
-kind: DeploymentConfig
-apiVersion: v1
+kind: Deployment
+apiVersion: apps/v1
 spec:
   template:
     spec:
-    containers:
-      - name: "nsqd"
-      image: "nsqio/nsq"
+      containers:
+        - name: "nsqd"
+        image: "nsqio/nsq"
 ```
 
 ```yml
 # examples/my-app/dc.yml
-kind: DeploymentConfig
-apiVersion: v1
+kind: Deployment
+apiVersion: apps/v1
 metadata:
-  name: "${DC_NAME}"
+  name: "${APP_NAME}"
 
 spec:
   replicas: 1
   selector:
-    name: "${DC_NAME}"
+    name: "${APP_NAME}"
   strategy:
-    type: Rolling
+    type: RollingUpdate
 
   template:
     metadata:
       labels:
-        name: "${DC_NAME}"
+        name: "${APP_NAME}"
 
     spec:
       containers:
-        - name: "${DC_NAME}"
+        - name: "${APP_NAME}"
           image: "docker-registry.default.svc:5000/oc-project/my-app:prod"
 ```
 
@@ -327,26 +327,26 @@ If we now apply the nsq-template to our app using `postApplyTemplates: [nsq-temp
 
 ```yml
 # Merged result after applying template
-kind: DeploymentConfig
-apiVersion: v1
+kind: Deployment
+apiVersion: apps/v1
 metadata:
-  name: "${DC_NAME}"
+  name: "${APP_NAME}"
 
 spec:
   replicas: 1
   selector:
-    name: "${DC_NAME}"
+    name: "${APP_NAME}"
   strategy:
-    type: Rolling
+    type: RollingUpdate
 
   template:
     metadata:
       labels:
-        name: "${DC_NAME}"
+        name: "${APP_NAME}"
 
     spec:
       containers:
-        - name: "${DC_NAME}"
+        - name: "${APP_NAME}"
           image: "docker-registry.default.svc:5000/oc-project/my-app:prod"
         # This is the part of the template
         - name: "nsqd"
@@ -416,10 +416,14 @@ The file will be updated in place.
 For deploying encrypted secrets, you'll need to set the environment variable
 `OCTOPLOY_KEY` with your key used to encrypt the data.
 
-## Change tracking
+## State tracking
 
-Changes are detected by storing a md5 sum in the label of the object. If this hash has changed the whole object will be
-applied. If no label has been found in openshift the object is assumed to be equal, and the label is added.
+Octoploy currently uses a ConfigMap called `octoploy-state` to keep track of the object states.
+
+The ConfigMap contains  all managed objects and their md5 sum. If this hash has changed the whole object will be
+applied. If the object does already exist, but is not listed in the state it will simply be added to the state.
+
+You can modify the name of the configmap by setting the `stateName` variable in the `_root.yml` file.
 
 Currently, the actual fields of the yml files are not compared, however this is a planned feature.  
 

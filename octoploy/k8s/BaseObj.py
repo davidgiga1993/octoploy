@@ -2,15 +2,16 @@ from typing import Dict, Optional
 
 
 class BaseObj:
-    kind: Optional[str]
+    api_version: str
+    kind: str
     name: Optional[str]
     namespace: Optional[str]
     metadata: Dict[str, any]
 
     def __init__(self, data: Dict[str, any]):
         self.data = data
-        self.kind = data.get('kind', None)
-        self.api_version = data.get('apiVersion', None)
+        self.kind = data['kind']
+        self.api_version = data['apiVersion']
 
         self.metadata = data.get('metadata', {})
         self.name = self.metadata.get('name', None)
