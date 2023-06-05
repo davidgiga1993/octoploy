@@ -14,7 +14,6 @@ class ObjectState:
     def __init__(self):
         self.context = ''
         self.name = ''
-        self.api_version = ''
         self.kind = ''
         self.hash = ''
         self.namespace: Optional[str] = None
@@ -23,10 +22,21 @@ class ObjectState:
         Transient flag to indicate if the object has been visited by octoploy
         """
 
+    def update_from_key(self, key: str):
+        segments = key.split('/')
+        count = len(segments)
+        if count > 0:
+            self.context = segments[0]
+        if count > 1:
+            self.namespace = segments[1]
+        if count > 2:
+            self.kind = segments[2]
+        if count > 3:
+            self.name = segments[3]
+
     def parse(self, data: Dict[str, str]) -> ObjectState:
         self.context = data['context']
         self.namespace = data['namespace']
-        self.api_version = data['apiVersion']
         self.kind = data['kind']
         self.name = data['name']
         self.hash = data.get('hash', '')
@@ -36,14 +46,13 @@ class ObjectState:
         return {
             'name': self.name,
             'hash': self.hash,
-            'apiVersion': self.api_version,
             'kind': self.kind,
             'context': self.context,
             'namespace': self.namespace,
         }
 
     def get_key(self) -> str:
-        return f'{self.context}*{self.api_version}|{self.kind}|{self.namespace}/{self.name}'
+        return f'{self.context}/{self.namespace}/{self.kind}/{self.name}'
 
 
 class StateTracking(Log):
@@ -94,6 +103,22 @@ class StateTracking(Log):
         }
         yml = YmlWriter.dump(data)
         self._k8s_api.apply(yml, namespace=namespace)
+
+    def move(self, source: str, dest: str):
+        if source.count('/') != dest.count('/'):
+            raise ValueError('Source and destination point to different path depths')
+
+        for value in list(self._state.values()):
+            key = value.get_key()
+            if not key.startswith(source):
+                continue
+            target = key.replace(source, dest)
+            self.log.info(f'Moving {key} to {target}')
+            value.update_from_key(target)
+
+            if key in self._state:
+                del self._state[key]
+            self._state[target] = value
 
     def get_not_visited(self, context: str) -> List[ObjectState]:
         """

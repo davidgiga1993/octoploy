@@ -106,6 +106,19 @@ def encrypt_secrets(args):
         YmlEncrypter(file).encrypt()
 
 
+def move_state(args):
+    run_mode = RunMode()
+    source = args.items[0]
+    dest = args.items[1]
+
+    root_config = load_project(args.config_dir)
+    root_config.initialize_state(run_mode)
+
+    state = root_config.get_state()
+    state.move(source, dest)
+    root_config.persist_state(run_mode)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--version', dest='version', action='store_true',
@@ -121,9 +134,16 @@ def main():
                         default='')
 
     subparsers = parser.add_subparsers(help='Commands')
-    backup_parser = subparsers.add_parser('encrypt', help='Encrypts k8s secrets objects')
-    backup_parser.add_argument('file', help='Yml file to be encrypted', nargs=1)
-    backup_parser.set_defaults(func=encrypt_secrets)
+    state_parser = subparsers.add_parser('move-state', help='Moves objects from the state to other places')
+    state_parser.add_argument('items', help='Source and destination.\n'
+                                            'The format for an object is: octoployName/Namespace/Kind/K8sObjectName\n'
+                                            'For example: "my-old-app/Namespace2/Deployment/app" '
+                                            '"my-new-app/Namespace2/Deployment/app"', nargs=2)
+    state_parser.set_defaults(func=move_state)
+
+    encrypt_parser = subparsers.add_parser('encrypt', help='Encrypts k8s secrets objects')
+    encrypt_parser.add_argument('file', help='Yml file to be encrypted', nargs=1)
+    encrypt_parser.set_defaults(func=encrypt_secrets)
 
     backup_parser = subparsers.add_parser('backup', help='Creates a backup of all resources in the cluster')
     backup_parser.add_argument('name', help='Name of the backup folder', nargs=1)

@@ -6,6 +6,7 @@ import yaml
 
 import octoploy.octoploy
 from octoploy.config.Config import RunMode, RootConfig
+from octoploy.state.StateTracking import StateTracking, ObjectState
 from tests import TestUtils
 from tests.TestUtils import DummyK8sApi
 
@@ -30,6 +31,62 @@ class StateTrackingTest(TestCase):
         prj_config.get_state()._k8s_api = self._dummy_api
         prj_config.create_api = get_dummy_api
         return prj_config
+
+    def test_move(self):
+        state = StateTracking(None)
+        data = state._state
+
+        obj = ObjectState()
+        obj.update_from_key('a/b/c/d')
+        self.assertEqual('a', obj.context)
+        self.assertEqual('b', obj.namespace)
+        self.assertEqual('c', obj.kind)
+        self.assertEqual('d', obj.name)
+        data['a'] = obj
+
+        obj = ObjectState()
+        obj.update_from_key('a/b/c')
+        self.assertEqual('a', obj.context)
+        self.assertEqual('b', obj.namespace)
+        self.assertEqual('c', obj.kind)
+        obj.name = 'name'
+        data['b'] = obj
+
+        obj = ObjectState()
+        obj.update_from_key('a/b')
+        self.assertEqual('a', obj.context)
+        self.assertEqual('b', obj.namespace)
+        obj.kind = 'Deployment'
+        obj.name = 'name'
+        data['c'] = obj
+
+        obj = ObjectState()
+        obj.update_from_key('a')
+        self.assertEqual('a', obj.context)
+        obj.namespace = 'unittest'
+        obj.kind = 'Deployment'
+        obj.name = 'name'
+        data['d'] = obj
+        init_state = dict(data)
+
+        state.move('a/b/c/d', '1/2/3/4')
+        self.assertEqual('1', data['a'].context)
+        self.assertEqual('2', data['a'].namespace)
+        self.assertEqual('3', data['a'].kind)
+        self.assertEqual('4', data['a'].name)
+        state.move('1/2/3/4', 'a/b/c/d')
+
+        state.move('a/b/c', '1/2/3')
+        self.assertEqual('1', data['a'].context)
+        self.assertEqual('2', data['a'].namespace)
+        self.assertEqual('3', data['a'].kind)
+        self.assertEqual('d', data['a'].name)
+
+        self.assertEqual('1', data['b'].context)
+        self.assertEqual('2', data['b'].namespace)
+        self.assertEqual('3', data['b'].kind)
+        self.assertEqual('name', data['b'].name)
+        state.move('1/2/3', 'a/b/c')
 
     def test_create_new(self):
         self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '', error=Exception('NotFound'))
