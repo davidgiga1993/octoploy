@@ -1,5 +1,7 @@
 from typing import Dict, Optional
 
+from octoploy.k8s.BaseObj import BaseObj
+
 from octoploy.k8s.SecretObj import SecretObj
 from octoploy.processing.TreeWalker import TreeProcessor, TreeWalker
 from octoploy.utils import Utils
@@ -30,14 +32,14 @@ class DecryptionProcessor(TreeProcessor, Log):
         super().__init__(__name__)
         self.encryption = Encryption()
 
-    def process(self, root: Dict[str, any]):
+    def process(self, k8s_object: BaseObj):
         try:
-            self._secret_obj = SecretObj(root)
+            self._secret_obj = SecretObj(k8s_object.data)
         except ValueError:
             self._secret_obj = None
 
         walker = TreeWalker(self)
-        walker.walk(root)
+        walker.walk(k8s_object.data)
 
     def process_str(self, value: str, parent: Dict[str, any], key: str) -> str:
         if not value.startswith(Encryption.CRYPT_PREFIX):

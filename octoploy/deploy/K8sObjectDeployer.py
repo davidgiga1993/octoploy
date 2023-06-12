@@ -1,11 +1,8 @@
-import hashlib
-
 from octoploy.api.Oc import K8sApi
 from octoploy.config.Config import RootConfig, AppConfig, RunMode
 from octoploy.k8s.BaseObj import BaseObj
 from octoploy.state.StateTracking import StateTracking
 from octoploy.utils.Log import Log
-from octoploy.utils.YmlWriter import YmlWriter
 
 
 class K8sObjectDeployer(Log):
@@ -38,16 +35,12 @@ class K8sObjectDeployer(Log):
         if context is not None:
             self._api.switch_context(context)
 
-    def deploy_object(self, data: dict):
+    def deploy_object(self, k8s_object: BaseObj):
         """
         Deploy the given object (if a deployment required, otherwise does nothing)
-        :param data: Data which should be deployed
+        :param k8s_object: Object which should be deployed
         """
-        # Sort the content so it's always reproducible
-        str_repr = YmlWriter.dump(data)
-        hash_val = hashlib.md5(str_repr.encode('utf-8')).hexdigest()
-
-        k8s_object = BaseObj(data)
+        hash_val = k8s_object.get_hash()
         # An object might be in a different namespace than the current context
         namespace = k8s_object.namespace
         if namespace is None:
@@ -57,7 +50,7 @@ class K8sObjectDeployer(Log):
         item_path = k8s_object.get_fqn()
         current_object = self._api.get(item_path, namespace=namespace)
         if current_object is None:
-            self.log.info(f'{item_path} will be created')
+            self._log_create(item_path)
 
         current_hash = None
         if current_object is not None:
@@ -79,13 +72,13 @@ class K8sObjectDeployer(Log):
             return
 
         if current_object is not None:
-            self.log.info(f'{item_path} will be updated')
+            self._log_update(item_path)
 
         if self._mode.plan:
             self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             return
 
-        self._api.apply(str_repr, namespace=namespace)
+        self._api.apply(k8s_object.as_string(), namespace=namespace)
         self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
 
         if k8s_object.is_kind('ConfigMap'):
@@ -102,7 +95,7 @@ class K8sObjectDeployer(Log):
             if namespace is None:
                 namespace = self._root_config.get_namespace_name()
             item_path = item.kind + '/' + item.name
-            self.log.info(f'{item_path} will be deleted')
+            self._log_delete(item_path)
             if self._mode.plan:
                 continue
 
@@ -116,3 +109,18 @@ class K8sObjectDeployer(Log):
         reload_actions = self._app_config.get_reload_actions()
         for action in reload_actions:
             action.run(self._api)
+
+    def _log_create(self, item_path: str):
+        self._log_verb(item_path, 'created', 'creating')
+
+    def _log_delete(self, item_path: str):
+        self._log_verb(item_path, 'deleted', 'deleting')
+
+    def _log_update(self, item_path: str):
+        self._log_verb(item_path, 'updated', 'updating')
+
+    def _log_verb(self, item_path: str, past_verb: str, progressive_verb: str):
+        if self._mode.plan or self._mode.dry_run:
+            self.log.info(f'{item_path} will be {past_verb}')
+            return
+        self.log.info(f'{progressive_verb} {item_path}')

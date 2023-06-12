@@ -1,7 +1,7 @@
 from typing import Dict
 
 from octoploy.api.Model import DeploymentConfig, NamedItem
-from octoploy.utils.DictUtils import DictUtils
+from octoploy.k8s.BaseObj import BaseObj
 from octoploy.utils.Log import Log
 
 
@@ -16,28 +16,21 @@ class K8sObjectMerge(Log):
         self._existing_dc = None  # type: DeploymentConfig
         self._new_dc = None  # type: DeploymentConfig
 
-    def merge(self, existing, to_add) -> bool:
+    def merge(self, existing: BaseObj, to_add: BaseObj) -> bool:
         """
         Merges the given openshift object into one.
         :param existing: Existing where the data should be added to
         :param to_add: New data
         :return: True if the data has been merged, false otherwise
         """
-        expected_type = existing['kind'].lower()
-        type_str = to_add['kind'].lower()
-        if expected_type != type_str:
+        if existing.get_fqn() != to_add.get_fqn():
             return False
 
-        expected_name = DictUtils.get(existing, self.NAME_PATH)
-        name = DictUtils.get(to_add, self.NAME_PATH)
-        if name is not None and expected_name is not None and expected_name != name:
-            return False
-
-        if expected_type == 'DeploymentConfig'.lower() or expected_type == 'Deployment'.lower():
+        if existing.is_kind('DeploymentConfig') or existing.is_kind('Deployment'):
             self._merge_dc(DeploymentConfig(existing), DeploymentConfig(to_add))
             return True
 
-        self.log.warning('Don\'t know how to merge ' + expected_type)
+        self.log.warning('Don\'t know how to merge ' + existing.kind)
 
     def _merge_dc(self, existing: DeploymentConfig, to_add: DeploymentConfig):
         """

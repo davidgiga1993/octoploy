@@ -4,6 +4,8 @@ import re
 from typing import Optional, Dict, List, Set
 from typing import TYPE_CHECKING
 
+from octoploy.k8s.BaseObj import BaseObj
+
 from octoploy.processing.TreeWalker import TreeWalker, TreeProcessor
 from octoploy.utils.Log import Log
 
@@ -59,20 +61,19 @@ class YmlTemplateProcessor(Log, TreeProcessor):
             raise ValueError('Child processor already defined')
         self._child = template_processor
 
-    def process(self, data: dict):
+    def process(self, k8s_object: BaseObj):
         """
         Processes the app data
 
-        :param data: Data of the app, the data will be modified in place
+        :param k8s_object: Data of the app, the data will be modified in place
         :raise MissingParam: Gets raised if at least one parameter is not defined
         """
         self._load_replacements()
 
         # Now replace any placeholders in the actual data tree
         walker = TreeWalker(self)
-        walker.walk(data)
-
-        # self._walk_dict(replacements, data)
+        walker.walk(k8s_object.data)
+        k8s_object.refresh()
 
         # Check if any of the missing vars are declared as "params"
         # (aka are required)

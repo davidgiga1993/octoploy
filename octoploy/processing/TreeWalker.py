@@ -1,15 +1,17 @@
 from abc import abstractmethod
 from typing import Dict, Optional
 
+from octoploy.k8s.BaseObj import BaseObj
+
 
 class TreeProcessor:
     @abstractmethod
-    def process(self, root: dict):
+    def process(self, k8s_object: BaseObj):
         """
         Processes the tree
 
-        :param root: Root of the tree
-        :raises: SkipObject: The tree should be skipped
+        :param k8s_object: K8s object
+        :raises: SkipObject: The object should be skipped
         """
         pass
 

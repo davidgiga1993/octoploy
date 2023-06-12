@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import base64
 import os
-from typing import List, Dict
+from typing import List
 
 import yaml
 
 from octoploy.deploy.K8sObjectDeployer import K8sObjectDeployer
 from octoploy.k8s.BaseObj import BaseObj
 from octoploy.processing.DataPreProcessor import DataPreProcessor
-from octoploy.processing.DecryptionProcessor import DecryptionProcessor
 from octoploy.processing.K8sObjectMerge import K8sObjectMerge
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 from octoploy.utils.Log import Log
@@ -20,7 +18,7 @@ class DeploymentBundle(Log):
     """
     Holds all objects of a single deployment (aka everything inside one folder)
     """
-    objects: List[Dict[str, any]]
+    objects: List[BaseObj]
 
     def __init__(self, pre_processor: DataPreProcessor):
         super().__init__()
@@ -40,17 +38,17 @@ class DeploymentBundle(Log):
 
         # Pre-process any variables
         if template_processor is not None:
-            template_processor.process(data)
+            template_processor.process(k8s_object)
 
         merger = K8sObjectMerge()
         # Check if the new data can be merged into any existing objects
         for item in self.objects:
-            if merger.merge(item, data):
+            if merger.merge(item, k8s_object):
                 # Data has been merged
                 return
 
         self._pre_processor.process(data)
-        self.objects.append(data)
+        self.objects.append(k8s_object)
 
     def deploy(self, deploy_runner: K8sObjectDeployer):
         """
@@ -61,11 +59,8 @@ class DeploymentBundle(Log):
 
         # First sort the objects, we want "deployments" to be the last object type
         # so all prerequisites are available
-        def sorting(x):
-            k8s_object = BaseObj(x)
-            object_kind = k8s_object.kind.lower()
-            if object_kind == 'DeploymentConfig'.lower() or \
-                    object_kind == 'Deployment'.lower():
+        def sorting(x: BaseObj):
+            if x.is_kind('DeploymentConfig') or x.is_kind('Deployment'):
                 return 1
             return 0
 
