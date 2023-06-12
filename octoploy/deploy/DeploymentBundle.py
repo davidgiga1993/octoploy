@@ -83,6 +83,6 @@ class DeploymentBundle(Log):
                 for doc in data:
                     all_objects.append(doc)
 
-        all_objects.extend(self.objects)
+        all_objects.extend([x.data for x in self.objects])
         with open(path, 'w') as file:
             YmlWriter.dump_all(all_objects, file)

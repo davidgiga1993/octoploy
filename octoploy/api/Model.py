@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from typing import Dict, Optional
 
+from octoploy.k8s.BaseObj import BaseObj
 from octoploy.utils.DictUtils import DictUtils
 
 
@@ -38,9 +39,9 @@ class PodData:
         self.deployment_config = labels.get('deploymentconfig')
 
 
-class DeploymentConfig:
-    def __init__(self, data):
-        self.data = data
+class DeploymentConfig(BaseObj):
+    def __init__(self, data: BaseObj):
+        super().__init__(data.data)
 
     def get_template(self) -> Optional[dict]:
         """
@@ -65,8 +66,8 @@ class DeploymentConfig:
         items = self.get_template_spec().get('containers', [])
         out = {}
         for data in items:
-            volume = DeploymentConfigContainer(data)
-            out[volume.get_name()] = volume
+            container = DeploymentConfigContainer(data)
+            out[container.get_name()] = container
         return out
 
     def get_volumes(self) -> Dict[str, DeploymentConfigVolume]:

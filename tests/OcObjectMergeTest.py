@@ -1,6 +1,7 @@
 from unittest import TestCase
 
 import yaml
+from octoploy.k8s.BaseObj import BaseObj
 
 from octoploy.processing.K8sObjectMerge import K8sObjectMerge
 
@@ -11,29 +12,32 @@ class K8sObjectMergeTest(TestCase):
         existing = '''kind: Deployment
 apiVersion: v1
 metadata:
-  name: "${DC_NAME}"
+  name: "${APP_NAME}"
 
 spec:
   replicas: 1
   selector:
-    name: "${DC_NAME}"
+    name: "${APP_NAME}"
   strategy:
      type: Rolling
 
   template:
     metadata:
       labels:
-        name: "${DC_NAME}"
+        name: "${APP_NAME}"
 
     spec:
       containers:
-        - name: "${DC_NAME}"
+        - name: "${APP_NAME}"
           volumeMounts:
             - name: java-cacerts-volume
               mountPath: /java/java-cacerts
 '''
         new = '''
+apiVersion: v1
 kind: Deployment
+metadata:
+  name: "${APP_NAME}"
 spec:
   template:
     spec:
@@ -42,7 +46,7 @@ spec:
 '''
         merge = K8sObjectMerge()
         data = yaml.safe_load(existing)
-        merge.merge(data, yaml.safe_load(new))
+        merge.merge(BaseObj(data), BaseObj(yaml.safe_load(new)))
 
         def validate(data):
             self.assertEqual('v1', data['apiVersion'])
@@ -50,7 +54,7 @@ spec:
             self.assertEqual(2, len(containers))
 
             for container in containers:
-                if container['name'] == '${DC_NAME}':
+                if container['name'] == '${APP_NAME}':
                     self.assertEqual(1, len(container['volumeMounts']))
                 else:
                     self.assertEqual('sidecar-container', container['name'])
@@ -59,30 +63,30 @@ spec:
 
         # Now invert the inputs, the result should be the same
         new_data = yaml.safe_load(new)
-        merge.merge(new_data, yaml.safe_load(existing))
+        merge.merge(BaseObj(new_data), BaseObj(yaml.safe_load(existing)))
         validate(new_data)
 
     def test_merge_same_container(self):
         existing = '''kind: Deployment
 apiVersion: v1
 metadata:
-  name: "${DC_NAME}"
+  name: "${APP_NAME}"
 
 spec:
   replicas: 1
   selector:
-    name: "${DC_NAME}"
+    name: "${APP_NAME}"
   strategy:
      type: Rolling
 
   template:
     metadata:
       labels:
-        name: "${DC_NAME}"
+        name: "${APP_NAME}"
 
     spec:
       containers:
-        - name: "${DC_NAME}"
+        - name: "${APP_NAME}"
           imagePullPolicy: Always
           resources:
             requests:
@@ -111,25 +115,26 @@ spec:
       imageChangeParams:
         automatic: true
         containerNames:
-          - "${DC_NAME}"
+          - "${APP_NAME}"
         from:
           kind: ImageStreamTag
-          name: '${DC_NAME}:prod'
+          name: '${APP_NAME}:prod'
 '''
         new = '''
+apiVersion: v1
 kind: Deployment
 metadata:
-  name: "${DC_NAME}"
+  name: "${APP_NAME}"
 
 spec:
   template:
     metadata:
       labels:
-        name: "${DC_NAME}"
+        name: "${APP_NAME}"
 
     spec:
       containers:
-        - name: "${DC_NAME}"
+        - name: "${APP_NAME}"
           volumeMounts:
             - name: crawler-packages-volume
               mountPath: /packages
@@ -141,7 +146,7 @@ spec:
 
         merge = K8sObjectMerge()
         data = yaml.safe_load(existing)
-        merge.merge(data, yaml.safe_load(new))
+        merge.merge(BaseObj(data), BaseObj(yaml.safe_load(new)))
 
         containers = data['spec']['template']['spec']['containers']
         self.assertEqual(1, len(containers))

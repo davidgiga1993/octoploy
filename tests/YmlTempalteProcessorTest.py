@@ -1,6 +1,7 @@
 from unittest import TestCase, mock
 
 from octoploy.config.Config import AppConfig
+from octoploy.k8s.BaseObj import BaseObj
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 
 
@@ -19,17 +20,20 @@ vars:
             app_config = AppConfig('', '')
 
         proc = YmlTemplateProcessor(app_config)
-        data = {'root': {
-            'item': '${DC_NAME}',
-            'object': '${MY_OBJECT}',
-            'list': [{
-                'other': '${DC_NAME}/${IMAGE_NAME}'
-            }],
-            'sub': {
-                'item2': '${MY_VAR}'
-            }
-        }}
-        proc.process(data)
+        data = {
+            'kind': 'Test',
+            'apiVersion': 'v1',
+            'root': {
+                'item': '${APP_NAME}',
+                'object': '${MY_OBJECT}',
+                'list': [{
+                    'other': '${APP_NAME}/${IMAGE_NAME}'
+                }],
+                'sub': {
+                    'item2': '${MY_VAR}'
+                }
+            }}
+        proc.process(BaseObj(data))
         self.assertEqual('hello', data['root']['item'])
         self.assertEqual('hello/image', data['root']['list'][0]['other'])
         self.assertEqual('testVal', data['root']['sub']['item2'])
@@ -47,16 +51,19 @@ vars:
             app_config = AppConfig('', '')
 
         proc = YmlTemplateProcessor(app_config)
-        data = {'root': {
-            'item': '${DC_NAME}',
-            'list': [{
-                'other': '${DC_NAME}'
-            }],
-            'sub': {
-                'item2': '${MY_VAR}'
-            }
-        }}
-        proc.process(data)
+        data = {
+            'kind': 'Test',
+            'apiVersion': 'v1',
+            'root': {
+                'item': '${APP_NAME}',
+                'list': [{
+                    'other': '${APP_NAME}'
+                }],
+                'sub': {
+                    'item2': '${MY_VAR}'
+                }
+            }}
+        proc.process(BaseObj(data))
         self.assertEqual('hello', data['root']['item'])
         self.assertEqual('hello', data['root']['list'][0]['other'])
         self.assertEqual('testVal', data['root']['sub']['item2'])
@@ -71,11 +78,14 @@ vars:
             app_config = AppConfig('', '')
 
         proc = YmlTemplateProcessor(app_config)
-        data = {'root': {
-            'item': '${DC_NAME}',
-            '_merge': '${MERGE_OBJ}',
-        }}
-        proc.process(data)
+        data = {
+            'kind': 'Test',
+            'apiVersion': 'v1',
+            'root': {
+                'item': '${APP_NAME}',
+                '_merge': '${MERGE_OBJ}',
+            }}
+        proc.process(BaseObj(data))
         self.assertEqual('hello', data['root']['item'])
         self.assertEqual('value', data['root']['someKey'])
 
@@ -86,12 +96,15 @@ name: hello
             app_config = AppConfig('', '')
 
         proc = YmlTemplateProcessor(app_config)
-        data = {'root': {
-            'item': '${DC_NAME}',
-            '_merge': {
-                'someKey': 'value',
-            },
-        }}
-        proc.process(data)
+        data = {
+            'kind': 'Test',
+            'apiVersion': 'v1',
+            'root': {
+                'item': '${APP_NAME}',
+                '_merge': {
+                    'someKey': 'value',
+                },
+            }}
+        proc.process(BaseObj(data))
         self.assertEqual('hello', data['root']['item'])
         self.assertEqual('value', data['root']['someKey'])
