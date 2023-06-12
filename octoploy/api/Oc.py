@@ -239,7 +239,7 @@ class Oc(K8sApi):
 
 class K8(Oc):
     def rollout(self, name: str, namespace: Optional[str] = None):
-        self._exec(['rollout', 'restart', 'deployments', name], namespace=namespace)
+        self._exec(['rollout', 'restart', name], namespace=namespace)
 
     def tag(self, source: str, dest: str, namespace: Optional[str] = None):
         raise NotImplemented('Not available for k8')
