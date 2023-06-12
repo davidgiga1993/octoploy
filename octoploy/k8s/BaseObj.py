@@ -26,6 +26,10 @@ class BaseObj:
         self.name = self.metadata.get('name', None)
         self.namespace = self.metadata.get('namespace', None)
 
+    def set_namespace(self, namespace: str):
+        self.metadata['namespace'] = namespace
+        self.namespace = namespace
+
     def get_fqn(self) -> str:
         """
         Returns the complete name of this object, including the group and kind

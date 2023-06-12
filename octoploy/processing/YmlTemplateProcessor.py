@@ -5,7 +5,6 @@ from typing import Optional, Dict, List, Set
 from typing import TYPE_CHECKING
 
 from octoploy.k8s.BaseObj import BaseObj
-
 from octoploy.processing.TreeWalker import TreeWalker, TreeProcessor
 from octoploy.utils.Log import Log
 

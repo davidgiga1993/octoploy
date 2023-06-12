@@ -41,13 +41,9 @@ class K8sObjectDeployer(Log):
         :param k8s_object: Object which should be deployed
         """
         hash_val = k8s_object.get_hash()
-        # An object might be in a different namespace than the current context
-        namespace = k8s_object.namespace
-        if namespace is None:
-            namespace = self._root_config.get_namespace_name()
-        k8s_object.namespace = namespace  # Make sure the object points to the correct namespace
-
         item_path = k8s_object.get_fqn()
+        namespace = k8s_object.namespace
+
         current_object = self._api.get(item_path, namespace=namespace)
         if current_object is None:
             self._log_create(item_path)

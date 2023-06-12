@@ -91,15 +91,19 @@ class AppDeployRunner(Log):
 
         # Additional processing
         tree_processors = self._root_config.get_yml_processors()
+        skipped_objects = []
         for processor in tree_processors:
-            for k8s_object in list(self._bundle.objects):
+            for k8s_object in self._bundle.objects:
                 try:
                     processor.process(k8s_object)
                 except SkipObject as e:
                     self.log.warning(f'Skipping object: {e}')
-                    # Mark in state as "visited" so the object doesn't get deleted on k8s side
-                    self._root_config.get_state().visit(self._app_config.get_name(), k8s_object, k8s_object.get_hash())
-                    self._bundle.objects.remove(k8s_object)
+                    skipped_objects.append(k8s_object)
+
+        for k8s_object in skipped_objects:
+            # Mark in state as "visited" so the object doesn't get deleted on k8s side
+            self._root_config.get_state().visit(self._app_config.get_name(), k8s_object, k8s_object.get_hash())
+            self._bundle.objects.remove(k8s_object)
 
         api = self._root_config.create_api()
         if self._mode.out_file is not None:

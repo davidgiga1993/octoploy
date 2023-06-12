@@ -7,6 +7,9 @@ from octoploy.api.Oc import Oc, K8, K8sApi
 from octoploy.config.AppConfig import AppConfig
 from octoploy.config.BaseConfig import BaseConfig
 from octoploy.processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
+from octoploy.processing.DecryptionProcessor import DecryptionProcessor
+from octoploy.processing.NamespaceProcessor import NamespaceProcessor
+from octoploy.processing.TreeWalker import TreeProcessor
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 from octoploy.state.StateTracking import StateTracking
 from octoploy.utils.Errors import ConfigError
@@ -81,15 +84,6 @@ class RootConfig(BaseConfig):
         """
         return self.data.get('type', '') == 'library'
 
-    def get_pre_processor(self) -> DataPreProcessor:
-        """
-        Returns the pre processor for the current config
-        """
-        mode = self._get_mode()
-        if mode == 'k8s' or mode == 'k8s':
-            return OcToK8PreProcessor()
-        return DataPreProcessor()
-
     def _get_mode(self) -> str:
         return self.data.get('mode', 'k8s')
 
@@ -126,6 +120,15 @@ class RootConfig(BaseConfig):
         """
         return self.data.get('context')
 
+    def get_pre_processor(self) -> DataPreProcessor:
+        """
+        Returns the pre processor for the current config
+        """
+        mode = self._get_mode()
+        if mode == 'k8s' or mode == 'k8s':
+            return OcToK8PreProcessor()
+        return DataPreProcessor()
+
     def get_template_processor(self) -> YmlTemplateProcessor:
         root_processor = super().get_template_processor()
         if self._library is not None:
@@ -146,6 +149,13 @@ class RootConfig(BaseConfig):
                 'NAMESPACE': name
             })
         return items
+
+    def get_yml_processors(self) -> List[TreeProcessor]:
+        """
+        Returns all yml processors which should be applied
+        :return: Processors
+        """
+        return [DecryptionProcessor(), NamespaceProcessor(self)]
 
     def load_app_configs(self) -> List[AppConfig]:
         """
