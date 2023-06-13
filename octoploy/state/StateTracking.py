@@ -143,17 +143,20 @@ class StateTracking(Log):
         state = self._k8s_to_state(context_name, k8s_object)
         return self._state.get(state.get_key())
 
-    def visit(self, context_name: str, k8s_object: BaseObj, hash_val: str):
+    def visit(self, context_name: str, k8s_object: BaseObj, hash_val: str, only_update: bool = False):
         """
         Marks the given object as "visited".
         If the object is not yet in the state it will be added
         :param context_name: Name of the state context
         :param k8s_object: Kubernetes object
         :param hash_val: The new hash value of the object.
+        :param only_update: True if the state should only be updated and not added if not existing
         """
         state = self._k8s_to_state(context_name, k8s_object)
         existing_state = self._state.get(state.get_key())
         if existing_state is None:
+            if only_update:
+                return
             state.hash = hash_val
             self._state[state.get_key()] = state
             return

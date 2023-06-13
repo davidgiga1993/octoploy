@@ -102,7 +102,8 @@ class AppDeployRunner(Log):
 
         for k8s_object in skipped_objects:
             # Mark in state as "visited" so the object doesn't get deleted on k8s side
-            self._root_config.get_state().visit(self._app_config.get_name(), k8s_object, k8s_object.get_hash())
+            self._root_config.get_state().visit(self._app_config.get_name(), k8s_object, k8s_object.get_hash(),
+                                                only_update=True)
             self._bundle.objects.remove(k8s_object)
 
         api = self._root_config.create_api()

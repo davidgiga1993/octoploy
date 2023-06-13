@@ -161,10 +161,6 @@ class StateTrackingTest(TestCase):
              "hash": "d6e8e8f4b59b77117ec4ad267be8dcae",
              "fqn": "Secret/secret",
              "namespace": "oc-project"},
-            {"context": "ABC2",
-             "hash": "178859f1aa21598384610f352d314ae6",
-             "fqn": "Secret/plain-secret",
-             "namespace": "oc-project"},
             {"context": "var-append",
              "hash": "24d921e38f585e26cdc247d8fddc260e",
              "fqn": "ConfigMap/config",
@@ -220,10 +216,6 @@ class StateTrackingTest(TestCase):
                                {"context": "var-append",
                                 "hash": "24d921e38f585e26cdc247d8fddc260e",
                                 "fqn": "ConfigMap/config",
-                                "namespace": "oc-project"},
-                               {"context": "ABC2",
-                                "hash": "178859f1aa21598384610f352d314ae6",
-                                "fqn": "Secret/plain-secret",
                                 "namespace": "oc-project"},
                                ], state_update.stdin)
         # Now deploy a single app
