@@ -1,0 +1,20 @@
+apiVersion: kubernetes.crossplane.io/v1alpha1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    source: InjectedIdentity
+
+---
+apiVersion: grafana.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: default
+spec:
+  credentials:
+    secretRef:
+      key: config
+      name: crossplane-grafana
+      namespace: crossplane-system
+    source: Secret

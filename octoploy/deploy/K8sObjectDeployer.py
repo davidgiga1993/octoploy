@@ -48,21 +48,23 @@ class K8sObjectDeployer(Log):
         if current_object is None:
             self._log_create(item_path)
 
-        current_hash = None
+        state_hash = None
+        old_state_hash = None
         if current_object is not None:
+            old_state_hash = current_object.get_annotation(self.HASH_ANNOTATION)
             obj_state = self._state.get_state(self._app_config.get_name(), k8s_object)
             if obj_state is not None and obj_state.hash != '':
-                current_hash = obj_state.hash
+                state_hash = obj_state.hash
             else:  # Fallback to old hash location
-                current_hash = current_object.get_annotation(self.HASH_ANNOTATION)
+                state_hash = old_state_hash
 
-        if current_object is not None and current_hash is None:
+        if current_object is not None and state_hash is None:
             # Item has not been deployed with octoploy, but it does already exist
             self.log.warning(f'{item_path} has no state annotation, assuming no change required')
             self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             return
 
-        if current_hash == hash_val:
+        if state_hash == hash_val:
             self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             self.log.debug(f"{item_path} hasn't changed")
             return
@@ -74,6 +76,9 @@ class K8sObjectDeployer(Log):
             self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             return
 
+        if old_state_hash is not None:
+            # Migrate to new state format by removing the old one
+            self._api.annotate(k8s_object.get_fqn(), self.HASH_ANNOTATION, None, namespace=k8s_object.namespace)
         self._api.apply(k8s_object.as_string(), namespace=namespace)
         self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
 
@@ -88,14 +93,12 @@ class K8sObjectDeployer(Log):
         abandoned = self._state.get_not_visited(self._app_config.get_name())
         for item in abandoned:
             namespace = item.namespace
-            if namespace is None:
-                namespace = self._root_config.get_namespace_name()
-            item_path = item.kind + '/' + item.name
-            self._log_delete(item_path)
+
+            self._log_delete(item.fqn)
             if self._mode.plan:
                 continue
 
-            self._api.delete(item_path, namespace=namespace)
+            self._api.delete(item.fqn, namespace=namespace)
             self._state.remove(item)
 
     def _reload_config(self):

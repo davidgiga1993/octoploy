@@ -11,48 +11,55 @@ from octoploy.utils.YmlWriter import YmlWriter
 
 
 class ObjectState:
+    fqn: str
+    """
+    Fully qualified name of the object in the format
+    kind.group/name
+    """
+
+    visited: bool
+    """
+    Transient flag to indicate if the object has been visited by octoploy
+    """
+
     def __init__(self):
-        self.context = ''
-        self.name = ''
-        self.kind = ''
+        self.context: str = ''
+        self.namespace: str = ''
+
+        self.fqn = ''
+
         self.hash = ''
-        self.namespace: Optional[str] = None
         self.visited = False
-        """
-        Transient flag to indicate if the object has been visited by octoploy
-        """
 
     def update_from_key(self, key: str):
-        segments = key.split('/')
-        count = len(segments)
-        if count > 0:
-            self.context = segments[0]
-        if count > 1:
-            self.namespace = segments[1]
-        if count > 2:
-            self.kind = segments[2]
-        if count > 3:
-            self.name = segments[3]
+        segments = key.split('/', 2)
+        if len(segments) < 3:
+            raise ValueError(f'Invalid key, must be 3 segments long {key}')
+
+        self.context = segments[0]
+        self.namespace = segments[1]
+        self.fqn = segments[2]
 
     def parse(self, data: Dict[str, str]) -> ObjectState:
-        self.context = data['context']
-        self.namespace = data['namespace']
-        self.kind = data['kind']
-        self.name = data['name']
+        self.context = data.get('context')
+        self.namespace = data.get('namespace')
+        self.fqn = data.get('fqn')
+        if self.context is None or self.namespace is None or self.fqn is None:
+            raise ValueError(f'Corrupt octoploy state, could not parse {data}')
+
         self.hash = data.get('hash', '')
         return self
 
     def to_dict(self) -> Dict[str, str]:
         return {
-            'name': self.name,
-            'hash': self.hash,
-            'kind': self.kind,
             'context': self.context,
             'namespace': self.namespace,
+            'fqn': self.fqn,
+            'hash': self.hash,
         }
 
     def get_key(self) -> str:
-        return f'{self.context}/{self.namespace}/{self.kind}/{self.name}'
+        return f'{self.context}/{self.namespace}/{self.fqn}'
 
 
 class StateTracking(Log):
@@ -158,15 +165,10 @@ class StateTracking(Log):
 
     @staticmethod
     def _k8s_to_state(context_name: str, k8s_object: BaseObj) -> ObjectState:
-        api_version = k8s_object.api_version
-        kind = k8s_object.kind
-        name = k8s_object.name
-
+        # At this point we always have a namespace set for the object
         state = ObjectState()
-        state.namespace = k8s_object.namespace
         state.context = context_name
-        state.api_version = api_version
-        state.kind = kind
-        state.name = name
+        state.namespace = k8s_object.namespace
+        state.fqn = k8s_object.get_fqn()
         state.visited = True
         return state

@@ -20,9 +20,8 @@ class ItemDescription:
     def __init__(self, data):
         self.data = data
 
-    def get_annotation(self, key: str) -> str:
-        item = self.data.get('metadata', {}).get('annotations', {}).get(key)
-        return item
+    def get_annotation(self, key: str) -> Optional[str]:
+        return self.data.get('metadata', {}).get('annotations', {}).get(key)
 
 
 class PodData:

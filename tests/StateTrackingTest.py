@@ -33,61 +33,60 @@ class StateTrackingTest(TestCase):
         prj_config.create_api = get_dummy_api
         return prj_config
 
-    def test_move(self):
-        state = StateTracking(None)
-        data = state._state
-
+    def _create_state_data(self):
+        data = {}
         obj = ObjectState()
-        obj.update_from_key('a/b/c/d')
+        obj.update_from_key('a/b/c.d/12')
+        data['a'] = obj
         self.assertEqual('a', obj.context)
         self.assertEqual('b', obj.namespace)
-        self.assertEqual('c', obj.kind)
-        self.assertEqual('d', obj.name)
-        data['a'] = obj
+        self.assertEqual('c.d/12', obj.fqn)
 
         obj = ObjectState()
         obj.update_from_key('a/b/c')
-        self.assertEqual('a', obj.context)
-        self.assertEqual('b', obj.namespace)
-        self.assertEqual('c', obj.kind)
-        obj.name = 'name'
         data['b'] = obj
-
-        obj = ObjectState()
-        obj.update_from_key('a/b')
         self.assertEqual('a', obj.context)
         self.assertEqual('b', obj.namespace)
-        obj.kind = 'Deployment'
-        obj.name = 'name'
-        data['c'] = obj
+        self.assertEqual('c', obj.fqn)
 
         obj = ObjectState()
-        obj.update_from_key('a')
+        obj.update_from_key('a/b/Deployment/name')
+        data['c'] = obj
         self.assertEqual('a', obj.context)
-        obj.namespace = 'unittest'
-        obj.kind = 'Deployment'
-        obj.name = 'name'
-        data['d'] = obj
-        init_state = dict(data)
+        self.assertEqual('b', obj.namespace)
+        return data
 
-        state.move('a/b/c/d', '1/2/3/4')
+    def test_move(self):
+        state = StateTracking(None)
+        data = state._state
+        data.update(self._create_state_data())
+
+        self.assertEqual('a', data['a'].context)
+        self.assertEqual('b', data['a'].namespace)
+        self.assertEqual('c.d/12', data['a'].fqn)
+
+        self.assertEqual('a', data['b'].context)
+        self.assertEqual('b', data['b'].namespace)
+        self.assertEqual('c', data['b'].fqn)
+
+        self.assertEqual('a', data['c'].context)
+        self.assertEqual('b', data['c'].namespace)
+
+        state.move('a/b/c.d/12', '1/2/3/4')
         self.assertEqual('1', data['a'].context)
         self.assertEqual('2', data['a'].namespace)
-        self.assertEqual('3', data['a'].kind)
-        self.assertEqual('4', data['a'].name)
-        state.move('1/2/3/4', 'a/b/c/d')
+        self.assertEqual('3/4', data['a'].fqn)
+        data = state._state = self._create_state_data()
 
-        state.move('a/b/c', '1/2/3')
+        state.move('a/b', '1/2')
         self.assertEqual('1', data['a'].context)
         self.assertEqual('2', data['a'].namespace)
-        self.assertEqual('3', data['a'].kind)
-        self.assertEqual('d', data['a'].name)
+        self.assertEqual('c.d/12', data['a'].fqn)
 
         self.assertEqual('1', data['b'].context)
         self.assertEqual('2', data['b'].namespace)
-        self.assertEqual('3', data['b'].kind)
-        self.assertEqual('name', data['b'].name)
-        state.move('1/2/3', 'a/b/c')
+        self.assertEqual('c', data['b'].fqn)
+        data = state._state = self._create_state_data()
 
     def test_create_new(self):
         self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '', error=Exception('NotFound'))
@@ -101,8 +100,28 @@ class StateTrackingTest(TestCase):
         self.assertEqual(['apply', '-f', '-'], state_update.args)
         self.assertStateEqual([{"context": "ABC",
                                 "hash": "e2e4634c5cd31a1b58da917e8b181b28",
-                                "kind": "Deployment",
-                                "name": "ABC",
+                                "fqn": "Deployment/ABC",
+                                "namespace": "oc-project",
+                                }], state_update.stdin)
+
+    def test_duplicate_kinds(self):
+        self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '', error=Exception('NotFound'))
+        self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], '{}')
+
+        octoploy.octoploy._run_app_deploy('app_deploy_test_duplicate_kinds', 'app', self._mode)
+
+        self.assertEqual(4, len(self._dummy_api.commands))
+        self.assertEqual(['get', 'ConfigMap/octoploy-state', '-o', 'json'], self._dummy_api.commands[0].args)
+        state_update = self._dummy_api.commands[-1]
+        self.assertEqual(['apply', '-f', '-'], state_update.args)
+        self.assertStateEqual([{"context": "app",
+                                "hash": "aa859898df4ff9412857e720beeabfba",
+                                "fqn": "ProviderConfig.kubernetes.crossplane.io/default",
+                                "namespace": "oc-project",
+                                },
+                               {"context": "app",
+                                "hash": "8652aee0d35b000096f2a263c6e3eb77",
+                                "fqn": "ProviderConfig.grafana.crossplane.io/default",
                                 "namespace": "oc-project",
                                 }], state_update.stdin)
 
@@ -124,38 +143,31 @@ class StateTrackingTest(TestCase):
         self.assertStateEqual([
             {"context": "ABC",
              "hash": "e2e4634c5cd31a1b58da917e8b181b28",
-             "kind": "Deployment",
-             "name": "ABC",
+             "fqn": "Deployment/ABC",
              "namespace": "oc-project"},
             {"context": "entity-compare-api",
              "hash": "644921ab79abf165d8fb8304913ff1c7",
-             "kind": "Deployment",
-             "name": "8080",
+             "fqn": "Deployment/8080",
              "namespace": "oc-project"},
             {"context": "favorite-api",
              "hash": "3005876d55a8c9af38a58a4227a377fc",
-             "kind": "Deployment",
-             "name": "8081",
+             "fqn": "Deployment/8081",
              "namespace": "oc-project"},
             {"context": "cm-types",
              "hash": "1f4d778af0ea594402e656fd6139c584",
-             "kind": "ConfigMap",
-             "name": "config",
+             "fqn": "ConfigMap/config",
              "namespace": "oc-project"},
             {"context": "ABC2",
              "hash": "d6e8e8f4b59b77117ec4ad267be8dcae",
-             "kind": "Secret",
-             "name": "secret",
+             "fqn": "Secret/secret",
              "namespace": "oc-project"},
             {"context": "ABC2",
              "hash": "178859f1aa21598384610f352d314ae6",
-             "kind": "Secret",
-             "name": "plain-secret",
+             "fqn": "Secret/plain-secret",
              "namespace": "oc-project"},
             {"context": "var-append",
              "hash": "24d921e38f585e26cdc247d8fddc260e",
-             "kind": "ConfigMap",
-             "name": "config",
+             "fqn": "ConfigMap/config",
              "namespace": "oc-project"},
         ], state_update.stdin)
 
@@ -187,38 +199,31 @@ class StateTrackingTest(TestCase):
         self.assertEqual(['apply', '-f', '-'], state_update.args)
         self.assertStateEqual([{"context": "ABC",
                                 "hash": "e2e4634c5cd31a1b58da917e8b181b28",
-                                "kind": "Deployment",
-                                "name": "ABC",
+                                "fqn": "Deployment/ABC",
                                 "namespace": "oc-project"},
                                {"context": "entity-compare-api",
                                 "hash": "644921ab79abf165d8fb8304913ff1c7",
-                                "kind": "Deployment",
-                                "name": "8080",
+                                "fqn": "Deployment/8080",
                                 "namespace": "oc-project"},
                                {"context": "favorite-api",
                                 "hash": "3005876d55a8c9af38a58a4227a377fc",
-                                "kind": "Deployment",
-                                "name": "8081",
+                                "fqn": "Deployment/8081",
                                 "namespace": "oc-project"},
                                {"context": "cm-types",
                                 "hash": "1f4d778af0ea594402e656fd6139c584",
-                                "kind": "ConfigMap",
-                                "name": "config",
+                                "fqn": "ConfigMap/config",
                                 "namespace": "oc-project"},
                                {"context": "ABC2",
                                 "hash": "d6e8e8f4b59b77117ec4ad267be8dcae",
-                                "kind": "Secret",
-                                "name": "secret",
+                                "fqn": "Secret/secret",
                                 "namespace": "oc-project"},
                                {"context": "var-append",
                                 "hash": "24d921e38f585e26cdc247d8fddc260e",
-                                "kind": "ConfigMap",
-                                "name": "config",
+                                "fqn": "ConfigMap/config",
                                 "namespace": "oc-project"},
                                {"context": "ABC2",
                                 "hash": "178859f1aa21598384610f352d314ae6",
-                                "kind": "Secret",
-                                "name": "plain-secret",
+                                "fqn": "Secret/plain-secret",
                                 "namespace": "oc-project"},
                                ], state_update.stdin)
         # Now deploy a single app
@@ -245,9 +250,9 @@ class StateTrackingTest(TestCase):
         self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], '''{
   "apiVersion": "v1",
   "data": {
-    "state": "[{\\"apiVersion\\": \\"v1\\", \\"context\\": \\"ABC\\", \\"kind\\": \\"DeploymentConfig\\", \\"name\\": \\"ABC\\", \\"namespace\\": \\"oc-project\\"}]"
+    "state": "[{\\"context\\": \\"ABC\\", \\"fqn\\": \\"DeploymentConfig/ABC\\", \\"namespace\\": \\"oc-project\\"}]"
   },
-  "kind": "ConfigMap",
+  "fqn": "ConfigMap",
   "metadata": {
     "name": "octoploy-state"
   }

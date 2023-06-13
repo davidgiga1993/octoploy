@@ -96,12 +96,12 @@ class K8sApi(Log):
     def switch_context(self, context: str):
         """
         Changes the configuration context
-        :param context: Context
+        :param context: Context which should be used
         """
         raise NotImplemented
 
     @abstractmethod
-    def annotate(self, name: str, key: str, value: str, namespace: Optional[str] = None):
+    def annotate(self, name: str, key: str, value: Optional[str], namespace: Optional[str] = None):
         """
         Add / updates the annotation at the given item
         :param name: Name
@@ -193,7 +193,12 @@ class Oc(K8sApi):
     def switch_context(self, context: str):
         raise NotImplemented('Not available for openshift')
 
-    def annotate(self, name: str, key: str, value: str, namespace: Optional[str] = None):
+    def annotate(self, name: str, key: str, value: Optional[str], namespace: Optional[str] = None):
+        if value is None:
+            # Remove the annotation
+            self._exec(['annotate', name, key + '-'], namespace=namespace)
+            return
+
         self._exec(['annotate', '--overwrite=true', name, key + '=' + value], namespace=namespace)
 
     def delete(self, name: str, namespace: str):

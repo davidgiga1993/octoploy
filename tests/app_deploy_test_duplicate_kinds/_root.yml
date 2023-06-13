@@ -1,0 +1,4 @@
+namespace: 'oc-project'
+stateName: ''
+vars:
+  globalVar: 'global'
