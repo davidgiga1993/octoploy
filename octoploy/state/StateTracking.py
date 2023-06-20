@@ -166,6 +166,11 @@ class StateTracking(Log):
     def remove(self, object_state: ObjectState):
         del self._state[object_state.get_key()]
 
+    def print(self):
+        self.log.info(f'State content of ConfigMap {self._cm_name}')
+        for key, value in self._state.items():
+            self.log.info('|- ' + value.get_key())
+
     @staticmethod
     def _k8s_to_state(context_name: str, k8s_object: BaseObj) -> ObjectState:
         # At this point we always have a namespace set for the object

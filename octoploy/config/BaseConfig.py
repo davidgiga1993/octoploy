@@ -2,8 +2,6 @@ import os
 from typing import Dict, List, Optional
 
 from octoploy.config.YmlConfig import YmlConfig
-from octoploy.processing.DecryptionProcessor import DecryptionProcessor
-from octoploy.processing.TreeWalker import TreeProcessor
 from octoploy.processing.ValueLoader import ValueLoaderFactory
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 
@@ -49,7 +47,7 @@ class BaseConfig(YmlConfig):
         for key, value in items.items():
             # Value can be a primitive or object
             if isinstance(value, dict):
-                # Is a object, use a loader to load the value
+                # Is an object, use a loader to load the value
                 loader_name = value.get('loader')
                 if loader_name is not None:
                     loader = ValueLoaderFactory.create(self, value['loader'])

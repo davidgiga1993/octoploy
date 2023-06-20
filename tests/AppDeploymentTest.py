@@ -1,5 +1,4 @@
 import os
-from time import sleep
 from unittest import TestCase
 
 import yaml
@@ -27,7 +26,7 @@ class AppDeploymentTest(TestCase):
     def test_inherit_vars(self):
         """
         Makes sure variables from the app are passed to the library
-        and overrides and conflicts with values from the app
+        and overrides conflicts with values from the app
         """
         self._deploy('app')
         with open(self._tmp_file) as f:
@@ -40,6 +39,13 @@ class AppDeploymentTest(TestCase):
         # Global variable should be passed down and should not be
         # overwritten by apps
         self.assertEqual('global', data['metadata']['GLOBAL_TEST'])
+
+    def test_var_override(self):
+        self._mode.var_override['globalVar'] = 'ext-override'
+        self._deploy('app')
+        with open(self._tmp_file) as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+        self.assertEqual('ext-override', data['metadata']['GLOBAL_TEST'])
 
     def test_cm_types(self):
         self._deploy('cm-types')
@@ -117,6 +123,7 @@ KEY STUFF
 
     def _deploy(self, app: str, project: str = 'app_deploy_test'):
         prj_config = RootConfig.load(os.path.join(self._base_path, project))
+        prj_config.initialize_state(self._mode)
         app_config = prj_config.load_app_config(app)
         runner = AppDeployment(prj_config, app_config, self._mode)
         runner.deploy()

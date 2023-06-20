@@ -46,8 +46,8 @@ def reload_config(args):
 
 def _run_app_deploy(config_dir: str, app_name: str, mode: RunMode):
     root_config = load_project(config_dir)
-    app_config = root_config.load_app_config(app_name)
     root_config.initialize_state(mode)
+    app_config = root_config.load_app_config(app_name)
     try:
         deployment = AppDeployment(root_config, app_config, mode)
         deployment.deploy()
@@ -58,8 +58,8 @@ def _run_app_deploy(config_dir: str, app_name: str, mode: RunMode):
 
 def _run_apps_deploy(config_dir: str, mode: RunMode):
     root_config = load_project(config_dir)
-    configs = root_config.load_app_configs()
     root_config.initialize_state(mode)
+    configs = root_config.load_app_configs()
     log_instance.log.debug(f'Found {len(configs)} apps to deploy')
     try:
         for app_config in configs:
@@ -72,6 +72,7 @@ def _run_apps_deploy(config_dir: str, mode: RunMode):
 def plan_app(args):
     mode = RunMode()
     mode.plan = True
+    mode.set_override_env(args.env)
     _run_app_deploy(args.config_dir, args.name[0], mode)
 
 
@@ -79,12 +80,14 @@ def deploy_app(args):
     mode = RunMode()
     mode.out_file = args.out_file
     mode.dry_run = args.dry_run
+    mode.set_override_env(args.env)
     _run_app_deploy(args.config_dir, args.name[0], mode)
 
 
 def plan_all(args):
     mode = RunMode()
     mode.plan = True
+    mode.set_override_env(args.env)
     _run_apps_deploy(args.config_dir, mode)
 
 
@@ -92,6 +95,7 @@ def deploy_all(args):
     mode = RunMode()
     mode.out_file = args.out_file
     mode.dry_run = args.dry_run
+    mode.set_override_env(args.env)
     _run_apps_deploy(args.config_dir, mode)
 
 
@@ -104,6 +108,14 @@ def encrypt_secrets(args):
     files = args.file
     for file in files:
         YmlEncrypter(file).encrypt()
+
+
+def list_state(args):
+    root_config = load_project(args.config_dir)
+    root_config.initialize_state(RunMode())
+
+    state = root_config.get_state()
+    state.print()
 
 
 def move_state(args):
@@ -132,13 +144,24 @@ def main():
     parser.add_argument('-c', '--config-dir', dest='config_dir',
                         help='Path to the folder containing all configurations',
                         default='')
+    parser.add_argument('-e', '--env', dest='env', action='append',
+                        help='key=value pairs of parameters to set/override during for the templating engine',
+                        default=[])
 
     subparsers = parser.add_subparsers(help='Commands')
-    state_parser = subparsers.add_parser('move-state', help='Moves objects from the state to other places')
-    state_parser.add_argument('items', help='Source and destination.\n'
-                                            'The format for an object is: octoployName/Namespace/Kind/K8sObjectName\n'
-                                            'For example: "my-old-app/Namespace2/Deployment/app" '
-                                            '"my-new-app/Namespace2/Deployment/app"', nargs=2)
+    state_parser = subparsers.add_parser('state', help='State interactions')
+
+    state_subparsers = state_parser.add_subparsers(help='State commands')
+    state_list_parser = state_subparsers.add_parser('list')
+    state_list_parser.set_defaults(func=list_state)
+
+    state_list_parser = state_subparsers.add_parser('mv')
+    state_list_parser.set_defaults(func=move_state)
+
+    state_list_parser.add_argument('items', help='Source and destination.\n'
+                                                 'The format for an object is: octoployName/Namespace/k8sFqn\n'
+                                                 'For example: "my-old-app/Namespace2/k8sFqn" '
+                                                 '"my-new-app/Namespace2/k8sFqn"', nargs=2)
     state_parser.set_defaults(func=move_state)
 
     encrypt_parser = subparsers.add_parser('encrypt', help='Encrypts k8s secrets objects')

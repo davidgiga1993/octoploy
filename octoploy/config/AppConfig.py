@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import List, Optional, Dict
 
 from octoploy.config.BaseConfig import BaseConfig
-from octoploy.config.DynamicConfigMap import DynamicConfigMap
 from octoploy.config.DeploymentActionConfig import DeploymentActionConfig
+from octoploy.config.DynamicConfigMap import DynamicConfigMap
 from octoploy.utils.DictUtils import DictUtils
 from octoploy.utils.Errors import MissingVar
 

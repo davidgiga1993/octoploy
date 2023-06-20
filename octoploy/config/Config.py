@@ -6,6 +6,7 @@ from typing import Optional, Dict, List
 from octoploy.api.Oc import Oc, K8, K8sApi
 from octoploy.config.AppConfig import AppConfig
 from octoploy.config.BaseConfig import BaseConfig
+from octoploy.processing import Constants
 from octoploy.processing.DataPreProcessor import DataPreProcessor, OcToK8PreProcessor
 from octoploy.processing.DecryptionProcessor import DecryptionProcessor
 from octoploy.processing.NamespaceProcessor import NamespaceProcessor
@@ -32,6 +33,25 @@ class RunMode:
         True if changes should be previewed
         """
 
+        self.var_override: Dict[str, str] = {}
+        """
+        Key/value pairs which should be passed to the templating engine.
+        These value have priority over already defined values
+        """
+
+    def set_override_env(self, env: List[str]):
+        """
+        Parses a key=value list
+        :param env: key=value strings
+        """
+        for entry in env:
+            parts = entry.split('=', 1)
+            if len(parts) < 2:
+                raise ValueError(f'Could not parse {entry}')
+            key = parts[0]
+            value = parts[1]
+            self.var_override[key] = value
+
 
 class RootConfig(BaseConfig):
     """
@@ -43,6 +63,7 @@ class RootConfig(BaseConfig):
         self._config_root = config_root
         self._oc = None
         self._library = None  # type: Optional[RootConfig]
+        self._global_var_overrides: Dict[str, str] = {}
 
         inherit = self.data.get('inherit')
         if inherit is not None:
@@ -58,6 +79,9 @@ class RootConfig(BaseConfig):
         state_name = self.data.get('stateName', '')
         self._state = StateTracking(self.create_api(), state_name)
 
+    def get_var_overrides(self) -> Dict[str, str]:
+        return self._global_var_overrides
+
     @classmethod
     def load(cls, path: str) -> RootConfig:
         return RootConfig(path, os.path.join(path, '_root.yml'))
@@ -66,6 +90,7 @@ class RootConfig(BaseConfig):
         return self._state
 
     def initialize_state(self, run_mode: RunMode):
+        self._global_var_overrides = run_mode.var_override
         if run_mode.dry_run:
             return
         self._state.restore(self.get_namespace_name())
@@ -89,7 +114,7 @@ class RootConfig(BaseConfig):
 
     def create_api(self) -> K8sApi:
         """
-        Creates a new openshift / k8s client
+        Creates a new openshift / k8s client.
         :return: Client
         """
         if self._oc is not None:
@@ -111,18 +136,22 @@ class RootConfig(BaseConfig):
 
         :return: Name or null for libraries or if the namespace should not be changed
         """
-        return self.data.get('namespace', self.data.get('project'))
+        namespace = self.data.get('namespace', self.data.get('project'))
+        if namespace is None:
+            # Maybe passed via commandline?
+            return self._global_var_overrides.get(Constants.VAR_NAMESPACE)
+        return namespace
 
     def get_kubectl_context(self) -> Optional[str]:
         """
-        Returns the configuration context name
+        Returns the configuration context name.
         :return: Name or null if the current context should be used
         """
         return self.data.get('context')
 
     def get_pre_processor(self) -> DataPreProcessor:
         """
-        Returns the pre processor for the current config
+        Returns the pre-processor for the current config
         """
         mode = self._get_mode()
         if mode == 'k8s' or mode == 'k8s':
@@ -146,8 +175,10 @@ class RootConfig(BaseConfig):
         if name is not None:
             items.update({
                 'OC_PROJECT': name,
-                'NAMESPACE': name
+                Constants.VAR_NAMESPACE: name
             })
+
+        items.update(self._global_var_overrides)
         return items
 
     def get_yml_processors(self) -> List[TreeProcessor]:
