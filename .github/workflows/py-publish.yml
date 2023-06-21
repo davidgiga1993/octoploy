@@ -4,6 +4,9 @@
 name: Upload Python Package
 
 on:
+  push:
+    branches:
+      - main
   release:
     types: [ created ]
 
@@ -21,22 +24,31 @@ jobs:
           python -m pip install --upgrade pip
           pip install setuptools wheel twine
 
-      - name: Build and publish
-        env:
-          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
-        run: |
-          python setup.py sdist bdist_wheel
-          twine upload dist/*
+      - name: Build
+        run: python setup.py sdist bdist_wheel
 
       - uses: actions/upload-artifact@master
         with:
           name: whl
-          path: dist/*.whl
+          path: dist/*
+  pip:
+    needs: deploy
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@master
+        with:
+          name: whl
+          path: dist
+      - name: Pip upload
+        env:
+          TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        run: twine upload dist/*
 
   docker:
     needs: deploy
-    if: github.event_name == 'release' || github.ref == 'refs/heads/master'
+    if: github.event_name == 'release' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       DOCKER_IMAGE: davidgiga1993/octoploy
