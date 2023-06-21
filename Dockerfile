@@ -1,12 +1,14 @@
 FROM python:3.9-slim-buster
 
 WORKDIR /app
-COPY requirements-docker.txt .
 COPY dist/octoploy*.whl .
+RUN apt update && \
+    apt install -y curl && \
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
+    install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && \
+    apt clean
+
 RUN pip install *.whl && \
-	pip install -r requirements-docker.txt && \
 	rm *.whl
 
-
-ENV PYTHONPATH "${PYTHONPATH}:/octoploy"
-ENTRYPOINT ["python", "-m", "main"]
+ENTRYPOINT ["/usr/local/bin/octoploy"]
