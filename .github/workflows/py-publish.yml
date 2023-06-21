@@ -9,9 +9,7 @@ on:
 
 jobs:
   deploy:
-
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -30,3 +28,47 @@ jobs:
         run: |
           python setup.py sdist bdist_wheel
           twine upload dist/*
+
+      - uses: actions/upload-artifact@master
+        with:
+          name: whl
+          path: dist/*.whl
+
+  docker:
+    needs: deploy
+    if: github.event_name == 'release' || github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    env:
+      DOCKER_IMAGE: davidgiga1993/octoploy
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/download-artifact@master
+        with:
+          name: whl
+          path: dist
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v3
+        with:
+          images: ${{ env.DOCKER_IMAGE }}
+          tags: |
+            type=ref,event=tag
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+
+      - name: Build and push Docker images
+        uses: docker/build-push-action@v2.7.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }},${{ env.DOCKER_IMAGE }}:latest
+          labels: ${{ steps.meta.outputs.labels }}

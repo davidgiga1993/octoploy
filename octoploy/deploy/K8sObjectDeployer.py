@@ -1,3 +1,5 @@
+from typing import List
+
 from octoploy.api.Oc import K8sApi
 from octoploy.config.Config import RootConfig, AppConfig, RunMode
 from octoploy.k8s.BaseObj import BaseObj
@@ -27,6 +29,8 @@ class K8sObjectDeployer(Log):
         self._mode = mode
         self._state = root_config.get_state()
 
+        self._to_be_deployed: List[BaseObj] = []
+
     def select_context(self):
         """
         Selects the cluster context
@@ -35,7 +39,29 @@ class K8sObjectDeployer(Log):
         if context is not None:
             self._api.switch_context(context)
 
-    def deploy_object(self, k8s_object: BaseObj):
+    def add_object(self, k8s_object: BaseObj):
+        """
+        Adds the given object to the deployment list
+        :param k8s_object: Object which should be deployed
+        """
+        self._to_be_deployed.append(k8s_object)
+        self._state.visit_only(self._app_config.get_name(), k8s_object)
+
+    def execute(self):
+        """
+        Executes the deployment
+        """
+        self._delete_abandoned_objects()
+        self._deploy_objects()
+
+    def _deploy_objects(self):
+        """
+        Deploys the pending objects
+        """
+        for k8s_object in self._to_be_deployed:
+            self._deploy_object(k8s_object)
+
+    def _deploy_object(self, k8s_object: BaseObj):
         """
         Deploy the given object (if a deployment required, otherwise does nothing)
         :param k8s_object: Object which should be deployed
@@ -60,12 +86,11 @@ class K8sObjectDeployer(Log):
 
         if current_object is not None and state_hash is None:
             # Item has not been deployed with octoploy, but it does already exist
-            self.log.warning(f'{item_path} has no state annotation, assuming no change required')
+            self.log.warning(f'{item_path} has no state, assuming no change required')
             self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             return
 
         if state_hash == hash_val:
-            self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             self.log.debug(f"{item_path} hasn't changed")
             return
 
@@ -73,19 +98,21 @@ class K8sObjectDeployer(Log):
             self._log_update(item_path)
 
         if self._mode.plan:
-            self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
             return
 
         if old_state_hash is not None:
             # Migrate to new state format by removing the old one
             self._api.annotate(k8s_object.get_fqn(), self.HASH_ANNOTATION, None, namespace=k8s_object.namespace)
+
         self._api.apply(k8s_object.as_string(), namespace=namespace)
+
+        # Update hash
         self._state.visit(self._app_config.get_name(), k8s_object, hash_val)
 
         if k8s_object.is_kind('ConfigMap'):
             self._reload_config()
 
-    def delete_abandoned_objects(self):
+    def _delete_abandoned_objects(self):
         """
         Deletes all objects which are not anymore included in the
         current app config

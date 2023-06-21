@@ -66,9 +66,9 @@ class DeploymentBundle(Log):
 
         self.objects.sort(key=sorting)
         for item in self.objects:
-            deploy_runner.deploy_object(item)
+            deploy_runner.add_object(item)
 
-        deploy_runner.delete_abandoned_objects()
+        deploy_runner.execute()
 
     def dump_objects(self, path: str):
         """

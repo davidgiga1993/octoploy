@@ -163,6 +163,15 @@ class StateTracking(Log):
         existing_state.hash = hash_val
         existing_state.visited = True
 
+    def visit_only(self, context_name: str, k8s_object):
+        """
+        Marks the given object as "visited" if already in the state
+        """
+        state = self._k8s_to_state(context_name, k8s_object)
+        existing_state = self._state.get(state.get_key())
+        if existing_state is not None:
+            existing_state.visited = True
+
     def remove(self, object_state: ObjectState):
         del self._state[object_state.get_key()]
 
