@@ -6,6 +6,7 @@ from octoploy.backup.BackupGenerator import BackupGenerator
 from octoploy.config.Config import RootConfig, RunMode
 from octoploy.deploy.AppDeploy import AppDeployment
 from octoploy.processing.DecryptionProcessor import DecryptionProcessor
+from octoploy.state.StateMover import StateMover
 from octoploy.utils.Encryption import YmlEncrypter
 from octoploy.utils.Log import Log
 
@@ -119,16 +120,13 @@ def list_state(args):
 
 
 def move_state(args):
-    run_mode = RunMode()
     source = args.items[0]
     dest = args.items[1]
+    target_cm = args.to
 
     root_config = load_project(args.config_dir)
-    root_config.initialize_state(run_mode)
-
-    state = root_config.get_state()
-    state.move(source, dest)
-    root_config.persist_state(run_mode)
+    mover = StateMover(root_config)
+    mover.move(source, dest, dest_configmap=target_cm)
 
 
 def main():
@@ -155,14 +153,16 @@ def main():
     state_list_parser = state_subparsers.add_parser('list')
     state_list_parser.set_defaults(func=list_state)
 
-    state_list_parser = state_subparsers.add_parser('mv')
-    state_list_parser.set_defaults(func=move_state)
+    state_mv_parser = state_subparsers.add_parser('mv')
+    state_mv_parser.set_defaults(func=move_state)
 
-    state_list_parser.add_argument('items', help='Source and destination.\n'
-                                                 'The format for an object is: octoployName/Namespace/k8sFqn\n'
-                                                 'For example: "my-old-app/Namespace2/k8sFqn" '
-                                                 '"my-new-app/Namespace2/k8sFqn"', nargs=2)
-    state_parser.set_defaults(func=move_state)
+    state_mv_parser.add_argument('items', help='Source and destination.\n'
+                                               'The format for an object is: octoployName/Namespace/k8sFqn\n'
+                                               'For example: "my-old-app/Namespace2/k8sFqn" '
+                                               '"my-new-app/Namespace2/k8sFqn"', nargs=2)
+    state_mv_parser.add_argument('--to', dest='to', help='Configmap where the state should be moved to (optional).'
+                                                         'Format: configmapSuffix|namespace/configmapSuffix')
+    state_mv_parser.set_defaults(func=move_state)
 
     encrypt_parser = subparsers.add_parser('encrypt', help='Encrypts k8s secrets objects')
     encrypt_parser.add_argument('file', help='Yml file to be encrypted', nargs=1)

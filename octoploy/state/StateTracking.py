@@ -111,21 +111,28 @@ class StateTracking(Log):
         yml = YmlWriter.dump(data)
         self._k8s_api.apply(yml, namespace=namespace)
 
-    def move(self, source: str, dest: str):
-        if source.count('/') != dest.count('/'):
-            raise ValueError('Source and destination point to different path depths')
+    def add(self, object_state: ObjectState):
+        self._state[object_state.get_key()] = object_state
 
+    def remove(self, object_state: ObjectState):
+        del self._state[object_state.get_key()]
+
+    def remove_key(self, key: str):
+        del self._state[key]
+
+    def get_items(self, prefix: str) -> List[ObjectState]:
+        """
+        Returns all state items which start with the given prefix
+        :param prefix: Prefix
+        :return: Items
+        """
+        items = []
         for value in list(self._state.values()):
             key = value.get_key()
-            if not key.startswith(source):
+            if not key.startswith(prefix):
                 continue
-            target = key.replace(source, dest)
-            self.log.info(f'Moving {key} to {target}')
-            value.update_from_key(target)
-
-            if key in self._state:
-                del self._state[key]
-            self._state[target] = value
+            items.append(value)
+        return items
 
     def get_not_visited(self, context: str) -> List[ObjectState]:
         """
@@ -171,9 +178,6 @@ class StateTracking(Log):
         existing_state = self._state.get(state.get_key())
         if existing_state is not None:
             existing_state.visited = True
-
-    def remove(self, object_state: ObjectState):
-        del self._state[object_state.get_key()]
 
     def print(self):
         self.log.info(f'State content of ConfigMap {self._cm_name}')
