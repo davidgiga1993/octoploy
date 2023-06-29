@@ -7,6 +7,7 @@ import yaml
 
 import octoploy.octoploy
 from octoploy.config.Config import RunMode, RootConfig
+from octoploy.state.StateMover import StateMover
 from octoploy.state.StateTracking import StateTracking, ObjectState
 from tests import TestUtils
 from tests.TestUtils import DummyK8sApi
@@ -37,55 +38,63 @@ class StateTrackingTest(TestCase):
         data = {}
         obj = ObjectState()
         obj.update_from_key('a/b/c.d/12')
-        data['a'] = obj
+        data[obj.get_key()] = obj
         self.assertEqual('a', obj.context)
         self.assertEqual('b', obj.namespace)
         self.assertEqual('c.d/12', obj.fqn)
 
         obj = ObjectState()
         obj.update_from_key('a/b/c')
-        data['b'] = obj
+        data[obj.get_key()] = obj
         self.assertEqual('a', obj.context)
         self.assertEqual('b', obj.namespace)
         self.assertEqual('c', obj.fqn)
 
         obj = ObjectState()
         obj.update_from_key('a/b/Deployment/name')
-        data['c'] = obj
+        data[obj.get_key()] = obj
         self.assertEqual('a', obj.context)
         self.assertEqual('b', obj.namespace)
         return data
 
     def test_move(self):
-        state = StateTracking(None)
+        root = self._load_project('app_deploy_test')
+        mover = StateMover(root)
+        state = StateTracking(root.create_api())
         data = state._state
+        root._state = state
+
+        def void(ignore):
+            pass
+
+        root.initialize_state = void
         data.update(self._create_state_data())
 
-        self.assertEqual('a', data['a'].context)
-        self.assertEqual('b', data['a'].namespace)
-        self.assertEqual('c.d/12', data['a'].fqn)
+        self.assertEqual('a', data['a/b/c.d/12'].context)
+        self.assertEqual('b', data['a/b/c.d/12'].namespace)
+        self.assertEqual('c.d/12', data['a/b/c.d/12'].fqn)
 
-        self.assertEqual('a', data['b'].context)
-        self.assertEqual('b', data['b'].namespace)
-        self.assertEqual('c', data['b'].fqn)
+        self.assertEqual('a', data['a/b/c'].context)
+        self.assertEqual('b', data['a/b/c'].namespace)
+        self.assertEqual('c', data['a/b/c'].fqn)
 
-        self.assertEqual('a', data['c'].context)
-        self.assertEqual('b', data['c'].namespace)
+        self.assertEqual('a', data['a/b/Deployment/name'].context)
+        self.assertEqual('b', data['a/b/Deployment/name'].namespace)
 
-        state.move('a/b/c.d/12', '1/2/3/4')
-        self.assertEqual('1', data['a'].context)
-        self.assertEqual('2', data['a'].namespace)
-        self.assertEqual('3/4', data['a'].fqn)
+        mover.move('a/b/c.d/12', '1/2/3/4', None)
+        self.assertEqual('1', data['1/2/3/4'].context)
+        self.assertEqual('2', data['1/2/3/4'].namespace)
+        self.assertEqual('3/4', data['1/2/3/4'].fqn)
         data = state._state = self._create_state_data()
 
-        state.move('a/b', '1/2')
-        self.assertEqual('1', data['a'].context)
-        self.assertEqual('2', data['a'].namespace)
-        self.assertEqual('c.d/12', data['a'].fqn)
+        mover.move('a/b', '1/2', None)
+        self.assertEqual('1', data['1/2/Deployment/name'].context)
+        self.assertEqual('2', data['1/2/Deployment/name'].namespace)
+        self.assertEqual('Deployment/name', data['1/2/Deployment/name'].fqn)
 
-        self.assertEqual('1', data['b'].context)
-        self.assertEqual('2', data['b'].namespace)
-        self.assertEqual('c', data['b'].fqn)
+        self.assertEqual('1', data['1/2/c'].context)
+        self.assertEqual('2', data['1/2/c'].namespace)
+        self.assertEqual('c', data['1/2/c'].fqn)
         data = state._state = self._create_state_data()
 
     def test_create_new(self):
