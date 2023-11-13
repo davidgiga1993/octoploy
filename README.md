@@ -10,10 +10,10 @@ with k8s object awareness.
 
 ## Installation
 
-- Python 3.8 or later
+- Python 3.9 or later
 - `kubectl` or `oc` binary in path
 
-```
+```bash
 pip install octoploy
 ```
 
@@ -37,31 +37,31 @@ with their associate values and merging referenced templates.
 
 Deploys everything
 
-```
+```bash
 octoploy deploy-all
 ```
 
 Deploys all object of the app with the give name
 
-```
+```bash
 octoploy deploy nginx
 ```
 
 The same commands are available for `plan` - which will list changes to be applied.
 
-```
+```bash
 octoploy plan / plan-all
 ```
 
 This command executes the `on-config-change` trigger
 
-```
+```bash
 octoploy reload prometheus
 ```
 
 ### Config structure
 
-```
+```text
 configs
 |- _root.yml <- Root config
 |- my-app <- App
@@ -195,7 +195,7 @@ spec:
 The following variables are available anywhere inside the yml files by default
 
 | Key         | Value                                |
-|-------------|--------------------------------------| 
+|-------------|--------------------------------------|
 | `APP_NAME`  | Name of the app in the `_index.yml`  |
 | `NAMESPACE` | Name of the namespace in `_root.yml` |
 
@@ -258,19 +258,19 @@ classDiagram
 
 Example:
 
-```
+```text
 |- some-template
     |- _index.yml
     |- dc.yml
 
 |- my-app
-    |- _index.yml <-- Referes to "some-template"
+    |- _index.yml <-- Refers to "some-template"
     |- others.yml
 ```
 
 Will result in
 
-```
+```text
 |- my-app
     |- _index.yml
     |- others.yml
