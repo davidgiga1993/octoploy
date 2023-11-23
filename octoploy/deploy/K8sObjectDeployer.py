@@ -31,14 +31,6 @@ class K8sObjectDeployer(Log):
 
         self._to_be_deployed: List[BaseObj] = []
 
-    def select_context(self):
-        """
-        Selects the cluster context
-        """
-        context = self._root_config.get_kubectl_context()
-        if context is not None:
-            self._api.switch_context(context)
-
     def add_object(self, k8s_object: BaseObj):
         """
         Adds the given object to the deployment list

@@ -55,8 +55,6 @@ class DeploymentBundle(Log):
         Deploys all objects in this bundle
         :param deploy_runner: Deployment runner which should be used
         """
-        deploy_runner.select_context()
-
         # First sort the objects, we want "deployments" to be the last object type
         # so all prerequisites are available
         def sorting(x: BaseObj):

@@ -61,7 +61,7 @@ class RootConfig(BaseConfig):
     def __init__(self, config_root: str, path: str):
         super().__init__(path)
         self._config_root = config_root
-        self._oc = None
+        self._k8s_api = None
         self._library = None  # type: Optional[RootConfig]
         self._global_var_overrides: Dict[str, str] = {}
 
@@ -117,18 +117,22 @@ class RootConfig(BaseConfig):
         Creates a new openshift / k8s client.
         :return: Client
         """
-        if self._oc is not None:
-            return self._oc
+        if self._k8s_api is not None:
+            return self._k8s_api
 
         mode = self._get_mode()
         if mode == 'oc':
-            oc = Oc()
+            k8s_api = Oc()
         elif mode == 'k8s' or mode == 'k8':
-            oc = K8()
+            k8s_api = K8()
         else:
             raise ValueError(f'Invalid mode: {mode}')
-        self._oc = oc
-        return oc
+
+        context = self.get_kubectl_context()
+        if context is not None:
+            k8s_api.switch_context(context)
+        self._k8s_api = k8s_api
+        return k8s_api
 
     def get_namespace_name(self) -> Optional[str]:
         """
@@ -230,4 +234,4 @@ class RootConfig(BaseConfig):
             raise FileNotFoundError('No index yml file found: ' + index_file)
 
         variables = self.get_replacements()
-        return AppConfig(folder_path, index_file, variables)
+        return AppConfig(folder_path, index_file, variables, root=self)

@@ -14,15 +14,24 @@ class AppConfig(BaseConfig):
     Contains the configuration for the deployment of a single app
     """
 
-    def __init__(self, config_root: str, path: Optional[str], external_vars: Dict[str, str] = None):
+    def __init__(self, config_root: str, path: Optional[str], external_vars: Dict[str, str] = None,
+                 root=None):
         super().__init__(path, external_vars)
         self._config_root = config_root
+        self._root = root
 
     def get_config_maps(self) -> List[DynamicConfigMap]:
         """
         Returns additional config maps which should contain the content of a file
         """
         return [DynamicConfigMap(data) for data in self.data.get('configmaps', [])]
+
+    def get_root(self):
+        """
+        Returns the root configuration
+        :return: Config
+        """
+        return self._root
 
     def enabled(self) -> bool:
         """
@@ -56,7 +65,7 @@ class AppConfig(BaseConfig):
             if dc_name is None:
                 raise MissingVar('APP_NAME not defined in forEach for app ' + str(self.get_name()))
 
-            config = AppConfig(self._config_root, None, instance_vars)
+            config = AppConfig(self._config_root, None, instance_vars, self._root)
             # Inherit all parameters
             config.data.update(self.data)
             # Update the DC_NAME
