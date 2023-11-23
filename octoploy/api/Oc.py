@@ -83,12 +83,13 @@ class K8sApi(Log):
         raise NotImplemented
 
     @abstractmethod
-    def exec(self, pod_name: str, cmd: str, args: List[str]):
+    def exec(self, pod_name: str, cmd: str, args: List[str], namespace: Optional[str] = None):
         """
         Executes a command in the given pod
         :param pod_name: Pod name
         :param cmd: Command
         :param args: Arguments
+        :param namespace: Namespace
         """
         raise NotImplemented
 
@@ -244,7 +245,7 @@ class Oc(K8sApi):
 
 class K8(Oc):
     def rollout(self, name: str, namespace: Optional[str] = None):
-        self._exec(['rollout', 'restart', name], namespace=namespace)
+        self._exec(['rollout', 'restart', 'deployment', name], namespace=namespace)
 
     def tag(self, source: str, dest: str, namespace: Optional[str] = None):
         raise NotImplemented('Not available for k8')
