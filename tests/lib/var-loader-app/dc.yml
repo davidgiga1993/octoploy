@@ -1,3 +1,5 @@
 kind: Service
 apiVersion: v1
 KEY: ${CERT_KEY}
+metadata:
+  name: other

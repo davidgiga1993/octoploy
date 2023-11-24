@@ -60,8 +60,9 @@ class AppDeploymentTest(TestCase):
 
         with open(self._tmp_file) as f:
             data = list(yaml.load_all(f, Loader=yaml.FullLoader))
+        data.sort(key=lambda d: d['metadata']['name'])
         self.assertEqual(2, len(data))
-        self.assertEqual('paramValue', data[0]['metadata']['name'])
+        self.assertEqual('paramValue', data[1]['metadata']['name'])
 
     def test_library_inherit_app_flags(self):
         self._deploy(None, project='lib-usage-flags')
