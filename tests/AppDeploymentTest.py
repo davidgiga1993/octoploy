@@ -56,11 +56,19 @@ class AppDeploymentTest(TestCase):
         self.assertIn('"y"', content)
 
     def test_library(self):
-        self._deploy('some-app', project='lib-usage')
+        self._deploy(None, project='lib-usage')
 
         with open(self._tmp_file) as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
-        self.assertEqual('paramValue', data['metadata']['name'])
+            data = list(yaml.load_all(f, Loader=yaml.FullLoader))
+        self.assertEqual(2, len(data))
+        self.assertEqual('paramValue', data[0]['metadata']['name'])
+
+    def test_library_inherit_app_flags(self):
+        self._deploy(None, project='lib-usage-flags')
+
+        with open(self._tmp_file) as f:
+            data = list(yaml.load_all(f, Loader=yaml.FullLoader))
+        self.assertEqual(1, len(data))
 
     def test_var_loader(self):
         self._deploy('var-loader-app', project='lib-usage')
@@ -124,6 +132,12 @@ KEY STUFF
     def _deploy(self, app: str, project: str = 'app_deploy_test'):
         prj_config = RootConfig.load(os.path.join(self._base_path, project))
         prj_config.initialize_state(self._mode)
+        if app is None:
+            configs = prj_config.load_app_configs()
+            for app_config in configs:
+                runner = AppDeployment(prj_config, app_config, self._mode)
+                runner.deploy()
+            return
         app_config = prj_config.load_app_config(app)
         runner = AppDeployment(prj_config, app_config, self._mode)
         runner.deploy()

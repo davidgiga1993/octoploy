@@ -1,4 +1,3 @@
-enabled: true
 applyTemplates: [ app-template-2 ]
 vars:
   REMAPPED: hello

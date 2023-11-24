@@ -14,6 +14,7 @@ from octoploy.processing.TreeWalker import TreeProcessor
 from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 from octoploy.state.StateTracking import StateTracking
 from octoploy.utils.Errors import ConfigError
+from octoploy.utils.Log import Log
 
 
 class RunMode:
@@ -58,8 +59,20 @@ class RootConfig(BaseConfig):
     Root configuration for a project (aka a collection of apps inside a single context/namespace)
     """
 
+    _app_flags: Dict[str, Dict[str, any]]
+    """
+    Holds any override parameters for 
+    """
+
+    _parent: Optional[RootConfig] = None
+    """
+    The parent that uses this config.
+    This may only be set if this config is a library.
+    """
+
     def __init__(self, config_root: str, path: str):
         super().__init__(path)
+        self.log = Log(__name__).log
         self._config_root = config_root
         self._k8s_api = None
         self._library = None  # type: Optional[RootConfig]
@@ -73,11 +86,14 @@ class RootConfig(BaseConfig):
             if not os.path.isdir(lib_dir):
                 raise FileNotFoundError('Library not found: ' + lib_dir)
             self._library = RootConfig.load(lib_dir)
+            self._library._parent = self
             if not self._library.is_library():
                 raise ConfigError('Project ' + inherit + ' referenced as library but is not a library')
 
         state_name = self.data.get('stateName', '')
         self._state = StateTracking(self.create_api(), state_name)
+
+        self._app_flags = self.data.get('apps', {})
 
     def get_var_overrides(self) -> Dict[str, str]:
         return self._global_var_overrides
@@ -86,11 +102,26 @@ class RootConfig(BaseConfig):
     def load(cls, path: str) -> RootConfig:
         return RootConfig(path, os.path.join(path, '_root.yml'))
 
+    def app_is_enabled(self, name: str) -> bool:
+        """
+        Indicates if the given app should be disabled
+        :param name: Name of the app
+        :return: Disabled
+        """
+        if self._parent is not None and not self._parent.app_is_enabled(name):
+            return False
+
+        flags = self._app_flags.get(name, {})
+        return flags.get('enabled', True)
+
     def get_state(self) -> StateTracking:
         return self._state
 
     def initialize_state(self, run_mode: RunMode):
         self._global_var_overrides = run_mode.var_override
+        if run_mode.out_file is not None:
+            if os.path.isfile(run_mode.out_file):
+                os.remove(run_mode.out_file)
         if run_mode.dry_run:
             return
         self._state.restore(self.get_namespace_name())
@@ -209,10 +240,11 @@ class RootConfig(BaseConfig):
                 # Index file missing
                 continue
 
-            if app_config.is_template() or not app_config.enabled():
-                # Silently skip
-                continue
             app_name = app_config.get_name()
+            if app_config.is_template() or not app_config.enabled():
+                self.log.debug(f"Skipping {app_name} as it's disabled")
+                continue
+
             if app_name in names:
                 raise ValueError(f'The app name {app_name} has already been used')
             names.add(app_name)
