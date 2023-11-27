@@ -3,7 +3,11 @@ import time
 from typing import Optional, List
 from unittest.mock import Mock
 
-from octoploy.api.Oc import Oc
+from octoploy.utils.Yml import Yml
+
+from octoploy.api.Kubectl import Oc
+from octoploy.k8s.BaseObj import BaseObj
+from octoploy.utils import YmlWriter
 
 OCTOPLOY_KEY = 'key123'
 
@@ -32,6 +36,8 @@ class DummyK8sApi(Oc):
         self.responds = []
         self._respond_not_found = False
 
+    def dry_run(self, yml: str, namespace: Optional[str] = None, server_side_dry_run: bool = False) -> BaseObj:
+        return BaseObj(Yml.load_str(yml))
     def not_found_by_default(self):
         self._respond_not_found = True
 
@@ -50,7 +56,7 @@ class DummyK8sApi(Oc):
                 return stdout
         if self._respond_not_found and args[0] == 'get':
             raise Exception('NotFound')
-        return '{}'
+        return '{"kind": "", "apiVersion": ""}'
 
 
 class TestHelper:

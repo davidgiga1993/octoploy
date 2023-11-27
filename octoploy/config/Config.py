@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Optional, Dict, List
 
-from octoploy.api.Oc import Oc, K8, K8sApi
+from octoploy.api.Kubectl import Oc, K8, K8sApi
 from octoploy.config.AppConfig import AppConfig
 from octoploy.config.BaseConfig import BaseConfig
 from octoploy.processing import Constants

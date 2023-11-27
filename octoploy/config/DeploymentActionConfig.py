@@ -7,7 +7,7 @@ from octoploy.utils.Log import Log
 if TYPE_CHECKING:
     from octoploy.config.Config import AppConfig
 
-from octoploy.api.Oc import K8sApi
+from octoploy.api.Kubectl import K8sApi
 
 
 class DeploymentActionConfig(Log):

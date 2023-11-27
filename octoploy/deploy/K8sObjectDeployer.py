@@ -1,8 +1,9 @@
 from typing import List
 
-from octoploy.api.Oc import K8sApi
+from octoploy.api.Kubectl import K8sApi
 from octoploy.config.Config import RootConfig, AppConfig, RunMode
 from octoploy.k8s.BaseObj import BaseObj
+from octoploy.k8s.K8sObjectDiff import K8sObjectDiff
 from octoploy.state.StateTracking import StateTracking
 from octoploy.utils.Log import Log, ColorFormatter
 
@@ -88,6 +89,8 @@ class K8sObjectDeployer(Log):
 
         if current_object is not None:
             self._log_update(item_path)
+            if self._mode.plan:
+                K8sObjectDiff(self._api).print(current_object, k8s_object)
 
         if self._mode.plan:
             return

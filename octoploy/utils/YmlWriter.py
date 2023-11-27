@@ -18,9 +18,13 @@ class YmlWriter:
     @classmethod
     def dump(cls, data) -> str:
         cls.init()
-        return yaml.dump(data, sort_keys=True, default_flow_style=False, width=float("inf"))
+        return yaml.dump(data, sort_keys=True,
+                         default_flow_style=False,
+                         width=float("inf"))
 
     @classmethod
     def dump_all(cls, data, file):
         cls.init()
-        yaml.dump_all(data, file, sort_keys=True, default_flow_style=False, width=float("inf"))
+        yaml.dump_all(data, file, sort_keys=True,
+                      default_flow_style=False,
+                      width=float("inf"))

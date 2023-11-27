@@ -4,7 +4,7 @@ from typing import Dict, List, Optional
 
 import yaml
 
-from octoploy.api.Oc import K8sApi
+from octoploy.api.Kubectl import K8sApi
 from octoploy.k8s.BaseObj import BaseObj
 from octoploy.utils.Log import Log
 from octoploy.utils.YmlWriter import YmlWriter
