@@ -1,9 +1,8 @@
 from unittest import TestCase
 
-from tests.TestUtils import DummyK8sApi
-
 from octoploy.k8s.BaseObj import BaseObj
 from octoploy.k8s.K8sObjectDiff import K8sObjectDiff
+from tests.TestUtils import DummyK8sApi
 
 
 class K8sObjectDiffTest(TestCase):
@@ -45,6 +44,32 @@ class K8sObjectDiffTest(TestCase):
                 'listItemRemoved': ['a'],
                 'listItemChanged': ['a', 'other'],
                 'addedDict': {'a': 'hello'}
+            }
+        })
+
+        K8sObjectDiff(api).print(a, b)
+
+    def test_multiline_str(self):
+        api = DummyK8sApi()
+        a = BaseObj({
+            'kind': 'a',
+            'apiVersion': 'v1',
+            'spec': {
+                'field': '''
+                This is a multiline string
+                It has multiple lines
+                Yay''',
+            }
+        })
+        b = BaseObj({
+            'kind': 'a',
+            'apiVersion': 'v1',
+            'spec': {
+                'field': '''
+                This is a multiline string
+                It has multiple lines, but some have been changed
+                or have been added
+                Yay''',
             }
         })
 

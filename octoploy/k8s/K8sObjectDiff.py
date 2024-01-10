@@ -1,10 +1,10 @@
-from typing import Dict, List
-
-from octoploy.utils.YmlWriter import YmlWriter
+import difflib
+from typing import Dict, List, Iterator
 
 from octoploy.api.Kubectl import K8sApi
 from octoploy.k8s.BaseObj import BaseObj
 from octoploy.utils.Log import ColorFormatter
+from octoploy.utils.YmlWriter import YmlWriter
 
 
 class K8sObjectDiff:
@@ -81,6 +81,16 @@ class K8sObjectDiff:
                 ColorFormatter.red))
             return
 
+        # If the entry is a multiline string, we create a proper diff
+        if (isinstance(current_entry, str) and isinstance(new_entry, str) and
+                ('\n' in current_entry or '\n' in new_entry)):
+            delta = difflib.unified_diff(current_entry.splitlines(), new_entry.splitlines())
+            print(ColorFormatter.colorize(
+                '~ ' + '.'.join(context) + f':',
+                ColorFormatter.yellow))
+            self._print_text_diff(delta)
+            return
+
         print(ColorFormatter.colorize(
             '~ ' + '.'.join(context) + f' = {current_entry} -> {new_entry}',
             ColorFormatter.yellow))
@@ -103,3 +113,16 @@ class K8sObjectDiff:
     def _del(data: Dict[str, any], key: str):
         if key in data:
             del data[key]
+
+    @staticmethod
+    def _print_text_diff(delta: Iterator[str]):
+        for line in delta:
+            line = line.strip('\n').strip()
+            if line == '---' or line == '+++':
+                continue
+            color = ''
+            if line.startswith('+'):
+                color = ColorFormatter.green
+            elif line.startswith('-'):
+                color = ColorFormatter.red
+            print(ColorFormatter.colorize('\t' + line, color))

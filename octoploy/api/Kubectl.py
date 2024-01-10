@@ -151,7 +151,7 @@ class Oc(K8sApi):
         return BaseObj(json.loads(json_str))
 
     def dry_run(self, yml: str, namespace: Optional[str] = None, server_side_dry_run: bool = False) -> BaseObj:
-        args = ['apply', '--server-side', '--dry-run=server', '-o', 'json', '-f', '-']
+        args = ['apply', '--server-side', '--force-conflicts', '--dry-run=server', '-o', 'json', '-f', '-']
         json_str = self._exec(args, stdin=yml, namespace=namespace)
         return BaseObj(json.loads(json_str))
 
