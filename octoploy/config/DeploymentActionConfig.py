@@ -23,7 +23,13 @@ class DeploymentActionConfig(Log):
     def run(self, k8s: K8sApi):
         namespace = self._app_config.get_root().get_namespace_name()
         if self._data == 'deploy':
-            k8s.rollout(self._app_config.get_name(), namespace=namespace)
+            deployment_name = self._app_config.get_name()
+            try:
+                k8s.rollout(deployment_name, namespace=namespace)
+            except Exception as e:
+                if '(NotFound)' in str(e):
+                    self.log.warning(f'Could not restart {deployment_name} because it does not exist')
+                    return
             return
 
         exec_config = self._data.get('exec', None)
