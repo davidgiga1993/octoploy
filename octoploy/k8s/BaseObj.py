@@ -26,6 +26,9 @@ class BaseObj:
         self.name = self.metadata.get('name', None)
         self.namespace = self.metadata.get('namespace', None)
 
+    def get_annotation(self, key: str) -> Optional[str]:
+        return self.metadata.get('annotations', {}).get(key)
+
     def set_namespace(self, namespace: str):
         self.metadata['namespace'] = namespace
         self.namespace = namespace

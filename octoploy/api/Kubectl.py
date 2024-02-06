@@ -4,7 +4,8 @@ import subprocess
 from abc import abstractmethod
 from typing import Optional, List
 
-from octoploy.api.Model import ItemDescription, PodData
+from octoploy.api.Model import PodData
+from octoploy.k8s.BaseObj import BaseObj
 from octoploy.utils.Log import Log
 
 
@@ -29,12 +30,22 @@ class K8sApi(Log):
         """
 
     @abstractmethod
-    def get(self, name: str, namespace: Optional[str] = None) -> Optional[ItemDescription]:
+    def get(self, name: str, namespace: Optional[str] = None) -> Optional[BaseObj]:
         """
         Returns the given item
         :param name: Name
         :param namespace: Namespace
         :return: Data (if found)
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def dry_run(self, yml: str, namespace: Optional[str] = None) -> BaseObj:
+        """
+        Applies the given yml file in dry-run mode (server-side) and returns the resulting yml
+        :param yml: Yml file
+        :param namespace: Namespace
+        :return: Stdout
         """
         raise NotImplemented
 
@@ -83,12 +94,13 @@ class K8sApi(Log):
         raise NotImplemented
 
     @abstractmethod
-    def exec(self, pod_name: str, cmd: str, args: List[str]):
+    def exec(self, pod_name: str, cmd: str, args: List[str], namespace: Optional[str] = None):
         """
         Executes a command in the given pod
         :param pod_name: Pod name
         :param cmd: Command
         :param args: Arguments
+        :param namespace: Namespace
         """
         raise NotImplemented
 
@@ -128,7 +140,7 @@ class Oc(K8sApi):
     def tag(self, source: str, dest: str, namespace: Optional[str] = None):
         self._exec(['tag', source, dest], print_out=True, namespace=namespace)
 
-    def get(self, name: str, namespace: Optional[str] = None) -> Optional[ItemDescription]:
+    def get(self, name: str, namespace: Optional[str] = None) -> Optional[BaseObj]:
         try:
             json_str = self._exec(['get', name, '-o', 'json'], namespace=namespace)
         except Exception as e:
@@ -136,7 +148,12 @@ class Oc(K8sApi):
                 return None
             raise
 
-        return ItemDescription(json.loads(json_str))
+        return BaseObj(json.loads(json_str))
+
+    def dry_run(self, yml: str, namespace: Optional[str] = None, server_side_dry_run: bool = False) -> BaseObj:
+        args = ['apply', '--server-side', '--force-conflicts', '--dry-run=server', '-o', 'json', '-f', '-']
+        json_str = self._exec(args, stdin=yml, namespace=namespace)
+        return BaseObj(json.loads(json_str))
 
     def apply(self, yml: str, namespace: Optional[str] = None) -> str:
         return self._exec(['apply', '-f', '-'], stdin=yml, namespace=namespace)
@@ -244,7 +261,7 @@ class Oc(K8sApi):
 
 class K8(Oc):
     def rollout(self, name: str, namespace: Optional[str] = None):
-        self._exec(['rollout', 'restart', name], namespace=namespace)
+        self._exec(['rollout', 'restart', 'deployment', name], namespace=namespace)
 
     def tag(self, source: str, dest: str, namespace: Optional[str] = None):
         raise NotImplemented('Not available for k8')

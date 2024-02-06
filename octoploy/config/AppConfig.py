@@ -1,4 +1,7 @@
 from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from octoploy.config.Config import RootConfig
 
 from typing import List, Optional, Dict
 
@@ -14,9 +17,11 @@ class AppConfig(BaseConfig):
     Contains the configuration for the deployment of a single app
     """
 
-    def __init__(self, config_root: str, path: Optional[str], external_vars: Dict[str, str] = None):
+    def __init__(self, config_root: str, path: Optional[str], external_vars: Dict[str, str] = None,
+                 root: Optional[RootConfig] = None):
         super().__init__(path, external_vars)
         self._config_root = config_root
+        self._root = root
 
     def get_config_maps(self) -> List[DynamicConfigMap]:
         """
@@ -24,11 +29,18 @@ class AppConfig(BaseConfig):
         """
         return [DynamicConfigMap(data) for data in self.data.get('configmaps', [])]
 
+    def get_root(self):
+        """
+        Returns the root configuration
+        :return: Config
+        """
+        return self._root
+
     def enabled(self) -> bool:
         """
         True if this app is enabled
         """
-        return self.data.get('enabled', True)
+        return self._root.app_is_enabled(self.get_name())
 
     def is_template(self) -> bool:
         """
@@ -52,15 +64,15 @@ class AppConfig(BaseConfig):
         instances = []
         for instance_vars in self.data.get('forEach', []):
             assert isinstance(instance_vars, dict)
-            dc_name = instance_vars.get('APP_NAME')
-            if dc_name is None:
+            app_name = instance_vars.get('APP_NAME')
+            if app_name is None:
                 raise MissingVar('APP_NAME not defined in forEach for app ' + str(self.get_name()))
 
-            config = AppConfig(self._config_root, None, instance_vars)
+            config = AppConfig(self._config_root, None, instance_vars, self._root)
             # Inherit all parameters
             config.data.update(self.data)
-            # Update the DC_NAME
-            DictUtils.set(config.data, 'name', dc_name)
+            # Update the name
+            DictUtils.set(config.data, 'name', app_name)
             instances.append(config)
 
         if len(instances) == 0:

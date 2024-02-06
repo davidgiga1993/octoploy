@@ -99,7 +99,7 @@ class StateTrackingTest(TestCase):
 
     def test_create_new(self):
         self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '', error=Exception('NotFound'))
-        self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], '{}')
+        self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
 
         octoploy.octoploy._run_app_deploy('app_deploy_test', 'app', self._mode)
 
@@ -115,7 +115,7 @@ class StateTrackingTest(TestCase):
 
     def test_duplicate_kinds(self):
         self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '', error=Exception('NotFound'))
-        self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], '{}')
+        self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
 
         octoploy.octoploy._run_app_deploy('app_deploy_test_duplicate_kinds', 'app', self._mode)
 
@@ -179,7 +179,7 @@ class StateTrackingTest(TestCase):
         # Now deploy a single app
         current_state = yaml.safe_load(state_update.stdin)
         self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], json.dumps(current_state))
-        self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '{}')
+        self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
         self._dummy_api.commands = []
         octoploy.octoploy._run_app_deploy('app_deploy_test', 'app', self._mode)
 
@@ -230,11 +230,11 @@ class StateTrackingTest(TestCase):
         # Now deploy a single app
         current_state = yaml.safe_load(state_update.stdin)
         self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], json.dumps(current_state))
-        self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '{}')
-        self._dummy_api.respond(['get', 'Deployment/8080', '-o', 'json'], '{}')
-        self._dummy_api.respond(['get', 'Deployment/8081', '-o', 'json'], '{}')
-        self._dummy_api.respond(['get', 'ConfigMap/config', '-o', 'json'], '{}')
-        self._dummy_api.respond(['get', 'Secret/secret', '-o', 'json'], '{}')
+        self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
+        self._dummy_api.respond(['get', 'Deployment/8080', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
+        self._dummy_api.respond(['get', 'Deployment/8081', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
+        self._dummy_api.respond(['get', 'ConfigMap/config', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
+        self._dummy_api.respond(['get', 'Secret/secret', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
         self._dummy_api.commands = []
         octoploy.octoploy._run_apps_deploy('app_deploy_test', self._mode)
 
@@ -249,6 +249,7 @@ class StateTrackingTest(TestCase):
     def test_removed_in_repo(self):
         self._dummy_api.respond(['get', 'DeploymentConfig/ABC', '-o', 'json'], '', error=Exception('NotFound'))
         self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], '''{
+  "kind": "test",
   "apiVersion": "v1",
   "data": {
     "state": "[{\\"context\\": \\"ABC\\", \\"fqn\\": \\"DeploymentConfig/ABC\\", \\"namespace\\": \\"oc-project\\"}]"

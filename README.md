@@ -97,9 +97,6 @@ shows all available parameters. Only the first 3 are required.
 # Can be "app" (default) or "template"
 type: 'app'
 
-# Indicates if this app should be deployed or ignored
-enabled: true
-
 # Name of the deployment, available as variable, see below
 name: 'my-app'
 
@@ -360,7 +357,6 @@ all have the same openshift config.
 
 ```yml
 # _index.yml
-enabled: true
 applyTemplates: [ api-template ]
 forEach:
   # NAME is required for each instance that should be created

@@ -1,4 +1,3 @@
 type: template
-enabled: true
 params:
   - PVC_SIZE

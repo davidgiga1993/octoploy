@@ -1,5 +1,4 @@
-enabled: true
-name: 'ABC'
+name: 'var-loader-app'
 
 vars:
   CERT:

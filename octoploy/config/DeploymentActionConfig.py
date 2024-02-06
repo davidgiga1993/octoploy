@@ -7,7 +7,7 @@ from octoploy.utils.Log import Log
 if TYPE_CHECKING:
     from octoploy.config.Config import AppConfig
 
-from octoploy.api.Oc import K8sApi
+from octoploy.api.Kubectl import K8sApi
 
 
 class DeploymentActionConfig(Log):
@@ -20,9 +20,16 @@ class DeploymentActionConfig(Log):
         self._data = data
         self._app_config = app_config
 
-    def run(self, oc: K8sApi):
+    def run(self, k8s: K8sApi):
+        namespace = self._app_config.get_root().get_namespace_name()
         if self._data == 'deploy':
-            oc.rollout(self._app_config.get_name())
+            deployment_name = self._app_config.get_name()
+            try:
+                k8s.rollout(deployment_name, namespace=namespace)
+            except Exception as e:
+                if '(NotFound)' in str(e):
+                    self.log.warning(f'Could not restart {deployment_name} because it does not exist')
+                    return
             return
 
         exec_config = self._data.get('exec', None)
@@ -32,7 +39,7 @@ class DeploymentActionConfig(Log):
 
             dc_name = self._app_config.get_name()
             self.log.info('Reloading via exec in pods of ' + dc_name)
-            pods = oc.get_pods(dc_name=dc_name)
+            pods = k8s.get_pods(dc_name=dc_name, namespace=namespace)
             for pod in pods:
-                oc.exec(pod.name, cmd, args)
+                k8s.exec(pod.name, cmd, args, namespace=namespace)
             return

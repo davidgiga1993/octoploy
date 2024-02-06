@@ -1,4 +1,3 @@
-enabled: true
 type: template
 vars:
   BASE: 1

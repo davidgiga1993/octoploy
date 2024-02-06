@@ -1,4 +1,3 @@
-enabled: true
 postApplyTemplates: [nsq-template]
 name: my-app
 

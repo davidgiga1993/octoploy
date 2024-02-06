@@ -1,10 +1,11 @@
 from typing import List
 
-from octoploy.api.Oc import K8sApi
+from octoploy.api.Kubectl import K8sApi
 from octoploy.config.Config import RootConfig, AppConfig, RunMode
 from octoploy.k8s.BaseObj import BaseObj
+from octoploy.k8s.K8sObjectDiff import K8sObjectDiff
 from octoploy.state.StateTracking import StateTracking
-from octoploy.utils.Log import Log
+from octoploy.utils.Log import Log, ColorFormatter
 
 
 class K8sObjectDeployer(Log):
@@ -30,14 +31,6 @@ class K8sObjectDeployer(Log):
         self._state = root_config.get_state()
 
         self._to_be_deployed: List[BaseObj] = []
-
-    def select_context(self):
-        """
-        Selects the cluster context
-        """
-        context = self._root_config.get_kubectl_context()
-        if context is not None:
-            self._api.switch_context(context)
 
     def add_object(self, k8s_object: BaseObj):
         """
@@ -96,6 +89,8 @@ class K8sObjectDeployer(Log):
 
         if current_object is not None:
             self._log_update(item_path)
+            if self._mode.plan:
+                K8sObjectDiff(self._api).print(current_object, k8s_object)
 
         if self._mode.plan:
             return
@@ -137,16 +132,16 @@ class K8sObjectDeployer(Log):
             action.run(self._api)
 
     def _log_create(self, item_path: str):
-        self._log_verb(item_path, 'created', 'creating')
+        self._log_verb(item_path, ColorFormatter.colorize('+', ColorFormatter.green), 'created', 'creating')
 
     def _log_delete(self, item_path: str):
-        self._log_verb(item_path, 'deleted', 'deleting')
+        self._log_verb(item_path, ColorFormatter.colorize('-', ColorFormatter.red), 'deleted', 'deleting')
 
     def _log_update(self, item_path: str):
-        self._log_verb(item_path, 'updated', 'updating')
+        self._log_verb(item_path, ColorFormatter.colorize('~', ColorFormatter.yellow), 'updated', 'updating')
 
-    def _log_verb(self, item_path: str, past_verb: str, progressive_verb: str):
+    def _log_verb(self, item_path: str, symbol: str, past_verb: str, progressive_verb: str):
         if self._mode.plan or self._mode.dry_run:
-            self.log.info(f'{item_path} will be {past_verb}')
+            self.log.info(f'{symbol} {item_path} will be {past_verb}')
             return
-        self.log.info(f'{progressive_verb} {item_path}')
+        self.log.info(f'{symbol} {progressive_verb} {item_path}')

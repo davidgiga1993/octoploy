@@ -28,10 +28,6 @@ class AppDeployment:
         """
         Deploys all instances of the app
         """
-        if self._mode.out_file is not None:
-            if os.path.isfile(self._mode.out_file):
-                os.remove(self._mode.out_file)
-
         factory = AppDeployRunnerFactory(self._root_config, self._mode)
         runners = factory.create(self._app_config)
         for runner in runners:

@@ -15,3 +15,7 @@ class Yml:
                     continue
                 docs.append(doc)
         return docs
+
+    @classmethod
+    def load_str(cls, yml: str) -> Dict[str, any]:
+        return yaml.load(yml, Loader=yaml.FullLoader)

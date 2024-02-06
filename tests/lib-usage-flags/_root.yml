@@ -1,0 +1,9 @@
+namespace: 'oc-project'
+inherit: 'lib'
+
+apps:
+  var-loader-app:
+    enabled: false
+
+vars:
+  lib-param: 'paramValue'
