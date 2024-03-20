@@ -99,7 +99,9 @@ class K8sObjectDeployer(Log):
             # Migrate to new state format by removing the old one
             self._api.annotate(k8s_object.get_fqn(), self.HASH_ANNOTATION, None, namespace=k8s_object.namespace)
 
-        self._api.apply(k8s_object.as_string(), namespace=namespace)
+        deploy_mode = self._app_config.get_deployment_mode()
+        deploy_mode.use_api(self._api)
+        deploy_mode.deploy(k8s_object, current_object, namespace=namespace)
 
         # Update hash
         self._state.visit(self._app_config.get_name(), k8s_object, hash_val)

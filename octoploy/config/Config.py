@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Optional, Dict, List
 
-from octoploy.api.Kubectl import Oc, K8, K8sApi
+from octoploy.api.Kubectl import Oc, K8s, K8sApi
 from octoploy.config.AppConfig import AppConfig
 from octoploy.config.BaseConfig import BaseConfig
 from octoploy.processing import Constants
@@ -155,7 +155,7 @@ class RootConfig(BaseConfig):
         if mode == 'oc':
             k8s_api = Oc()
         elif mode == 'k8s' or mode == 'k8':
-            k8s_api = K8()
+            k8s_api = K8s()
         else:
             raise ValueError(f'Invalid mode: {mode}')
 

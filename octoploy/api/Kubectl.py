@@ -60,6 +60,26 @@ class K8sApi(Log):
         raise NotImplemented
 
     @abstractmethod
+    def replace(self, yml: str, namespace: Optional[str] = None) -> str:
+        """
+        Replaces the object
+        :param yml: Yml file
+        :param namespace: Namespace
+        :return: Stdout
+        """
+        raise NotImplemented
+
+    @abstractmethod
+    def create(self, yml: str, namespace: Optional[str] = None) -> str:
+        """
+        Creates the object
+        :param yml: Yml file
+        :param namespace: Namespace
+        :return: Stdout
+        """
+        raise NotImplemented
+
+    @abstractmethod
     def get_pod(self, dc_name: str = None, pod_name: str = None,
                 namespace: Optional[str] = None) -> Optional[PodData]:
         """
@@ -133,6 +153,10 @@ class K8sApi(Log):
 
 
 class Oc(K8sApi):
+    """
+    Openshift specific implementation
+    """
+
     def get_namespaces(self) -> List[str]:
         lines = self._exec(['get', 'namespaces', '-o', 'name'])
         return lines.splitlines()
@@ -144,7 +168,7 @@ class Oc(K8sApi):
         try:
             json_str = self._exec(['get', name, '-o', 'json'], namespace=namespace)
         except Exception as e:
-            if 'NotFound' in str(e):
+            if 'NotFound' in str(e) or "doesn't have a resource type" in str(e):
                 return None
             raise
 
@@ -154,6 +178,12 @@ class Oc(K8sApi):
         args = ['apply', '--server-side', '--force-conflicts', '--dry-run=server', '-o', 'json', '-f', '-']
         json_str = self._exec(args, stdin=yml, namespace=namespace)
         return BaseObj(json.loads(json_str))
+
+    def replace(self, yml: str, namespace: Optional[str] = None) -> str:
+        return self._exec(['replace', '-f', '-'], stdin=yml, namespace=namespace)
+
+    def create(self, yml: str, namespace: Optional[str] = None) -> str:
+        return self._exec(['create', '-f', '-'], stdin=yml, namespace=namespace)
 
     def apply(self, yml: str, namespace: Optional[str] = None) -> str:
         return self._exec(['apply', '-f', '-'], stdin=yml, namespace=namespace)
@@ -259,7 +289,7 @@ class Oc(K8sApi):
         return 'oc'
 
 
-class K8(Oc):
+class K8s(Oc):
     def rollout(self, name: str, namespace: Optional[str] = None):
         self._exec(['rollout', 'restart', 'deployment', name], namespace=namespace)
 

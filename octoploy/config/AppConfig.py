@@ -1,5 +1,9 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
+from octoploy.deploy.DeploymentMode import DeploymentMode, ReplaceDeploymentMode, ApplyDeploymentMode
+
 if TYPE_CHECKING:
     from octoploy.config.Config import RootConfig
 
@@ -125,3 +129,9 @@ class AppConfig(BaseConfig):
                 'DC_NAME': dc_name  # Deprecated
             })
         return items
+
+    def get_deployment_mode(self) -> DeploymentMode:
+        mode = self.data.get('deploymentMode', 'apply')
+        if mode == 'replace':
+            return ReplaceDeploymentMode()
+        return ApplyDeploymentMode()

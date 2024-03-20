@@ -15,6 +15,7 @@ class DynamicConfigMap:
     def __init__(self, data):
         self._data = data
         self.name = data['name']
+        self.namespace = data.get('namespace')
         self.files = data['files']
         self.disable_templating = data.get('disableTemplating', False)
 
@@ -31,6 +32,8 @@ class DynamicConfigMap:
             },
             'data': config_data
         }
+        if self.namespace is not None:
+            data['metadata']['namespace'] = self.namespace
 
         for file_obj in self.files:
             file = file_obj['file']
