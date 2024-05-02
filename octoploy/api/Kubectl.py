@@ -50,7 +50,7 @@ class K8sApi(Log):
         raise NotImplemented
 
     @abstractmethod
-    def apply(self, yml: str, namespace: Optional[str] = None) -> str:
+    def apply(self, yml: str, namespace: Optional[str] = None, extra_flags: Optional[List[str]] = None) -> str:
         """
         Applies the given yml file
         :param yml: Yml file
@@ -60,7 +60,7 @@ class K8sApi(Log):
         raise NotImplemented
 
     @abstractmethod
-    def replace(self, yml: str, namespace: Optional[str] = None) -> str:
+    def replace(self, yml: str, namespace: Optional[str] = None, extra_flags: Optional[List[str]] = None) -> str:
         """
         Replaces the object
         :param yml: Yml file
@@ -179,14 +179,22 @@ class Oc(K8sApi):
         json_str = self._exec(args, stdin=yml, namespace=namespace)
         return BaseObj(json.loads(json_str))
 
-    def replace(self, yml: str, namespace: Optional[str] = None) -> str:
-        return self._exec(['replace', '-f', '-'], stdin=yml, namespace=namespace)
+    def apply(self, yml: str, namespace: Optional[str] = None, extra_flags: Optional[List[str]] = None) -> str:
+        args = ['apply']
+        if extra_flags is not None:
+            args.extend(extra_flags)
+        args.extend(['-f', '-'])
+        return self._exec(args, stdin=yml, namespace=namespace)
+
+    def replace(self, yml: str, namespace: Optional[str] = None, extra_flags: Optional[List[str]] = None) -> str:
+        args = ['replace']
+        if extra_flags is not None:
+            args.extend(extra_flags)
+        args.extend(['-f', '-'])
+        return self._exec(args, stdin=yml, namespace=namespace)
 
     def create(self, yml: str, namespace: Optional[str] = None) -> str:
         return self._exec(['create', '-f', '-'], stdin=yml, namespace=namespace)
-
-    def apply(self, yml: str, namespace: Optional[str] = None) -> str:
-        return self._exec(['apply', '-f', '-'], stdin=yml, namespace=namespace)
 
     def get_pod(self, dc_name: str = None, pod_name: str = None, namespace: Optional[str] = None) -> Optional[PodData]:
         pods = self.get_pods(dc_name=dc_name, pod_name=pod_name, namespace=namespace)

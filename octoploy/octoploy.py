@@ -84,6 +84,13 @@ def deploy_app(args):
     mode.set_override_env(args.env)
     _run_app_deploy(args.config_dir, args.name[0], mode)
 
+def delete_app(args):
+    mode = RunMode()
+    mode.delete = True
+    mode.plan = args.plan
+    mode.set_override_env(args.env)
+    _run_app_deploy(args.config_dir, args.name[0], mode)
+
 
 def plan_all(args):
     mode = RunMode()
@@ -204,6 +211,12 @@ def main():
     deploy_all_parser.add_argument('--dry-run', dest='dry_run', help='Does not interact with openshift',
                                    action='store_true')
     deploy_all_parser.set_defaults(func=deploy_all)
+
+    delete_parser = subparsers.add_parser('delete', help='Deletes the configuration of an application')
+    delete_parser.add_argument('--plan', dest='plan', help='Same as plan but in delete mode',
+                               action='store_true')
+    delete_parser.add_argument('name', help='Name of the app which should be deleted', nargs=1)
+    delete_parser.set_defaults(func=delete_app)
 
     args = parser.parse_args()
     if args.version:

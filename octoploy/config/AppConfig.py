@@ -131,7 +131,21 @@ class AppConfig(BaseConfig):
         return items
 
     def get_deployment_mode(self) -> DeploymentMode:
-        mode = self.data.get('deploymentMode', 'apply')
-        if mode == 'replace':
-            return ReplaceDeploymentMode()
-        return ApplyDeploymentMode()
+        modes = self.data.get('deploymentMode', [])
+        flags = []
+        final_mode = ApplyDeploymentMode()
+        for item in modes:
+            if item == 'force-conflicts':
+                flags.append('--force-conflicts')
+                continue
+            if item == 'server-side':
+                flags.append('--server-side')
+                continue
+            if item == 'replace':
+                final_mode = ReplaceDeploymentMode()
+                continue
+
+            raise ValueError('Unknown deployment mode: ' + item)
+
+        final_mode.set_flags(flags)
+        return final_mode

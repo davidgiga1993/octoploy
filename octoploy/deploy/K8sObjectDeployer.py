@@ -65,10 +65,13 @@ class K8sObjectDeployer(Log):
 
         current_object = self._api.get(item_path, namespace=namespace)
         if current_object is None:
+            if self._mode.delete:
+                return
             self._log_create(item_path)
 
         state_hash = None
         old_state_hash = None
+        obj_state = None
         if current_object is not None:
             old_state_hash = current_object.get_annotation(self.HASH_ANNOTATION)
             obj_state = self._state.get_state(self._app_config.get_name(), k8s_object)
@@ -76,6 +79,16 @@ class K8sObjectDeployer(Log):
                 state_hash = obj_state.hash
             else:  # Fallback to old hash location
                 state_hash = old_state_hash
+
+        if self._mode.delete:
+            if current_object is not None:
+                self._log_delete(item_path)
+                if self._mode.plan:
+                    return
+                self._api.delete(item_path, namespace=namespace)
+            if obj_state is not None:
+                self._state.remove(obj_state)
+            return
 
         if current_object is not None and state_hash is None:
             # Item has not been deployed with octoploy, but it does already exist
@@ -131,7 +144,7 @@ class K8sObjectDeployer(Log):
         """
         reload_actions = self._app_config.get_reload_actions()
         for action in reload_actions:
-            action.run(self._api)
+            action.run(self._api, self._to_be_deployed)
 
     def _log_create(self, item_path: str):
         self._log_verb(item_path, ColorFormatter.colorize('+', ColorFormatter.green), 'created', 'creating')

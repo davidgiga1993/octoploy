@@ -40,6 +40,11 @@ class RunMode:
         These value have priority over already defined values
         """
 
+        self.delete = False
+        """
+        Delete mode
+        """
+
     def set_override_env(self, env: List[str]):
         """
         Parses a key=value list
