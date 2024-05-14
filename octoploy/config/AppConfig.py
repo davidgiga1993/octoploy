@@ -1,5 +1,9 @@
 from __future__ import annotations
+
 from typing import TYPE_CHECKING
+
+from octoploy.deploy.DeploymentMode import DeploymentMode, ReplaceDeploymentMode, ApplyDeploymentMode
+
 if TYPE_CHECKING:
     from octoploy.config.Config import RootConfig
 
@@ -125,3 +129,23 @@ class AppConfig(BaseConfig):
                 'DC_NAME': dc_name  # Deprecated
             })
         return items
+
+    def get_deployment_mode(self) -> DeploymentMode:
+        modes = self.data.get('deploymentMode', [])
+        flags = []
+        final_mode = ApplyDeploymentMode()
+        for item in modes:
+            if item == 'force-conflicts':
+                flags.append('--force-conflicts')
+                continue
+            if item == 'server-side':
+                flags.append('--server-side')
+                continue
+            if item == 'replace':
+                final_mode = ReplaceDeploymentMode()
+                continue
+
+            raise ValueError('Unknown deployment mode: ' + item)
+
+        final_mode.set_flags(flags)
+        return final_mode
