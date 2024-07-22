@@ -12,9 +12,11 @@ class DeploymentMode:
     _api: K8sApi
     _flags: List[str]
 
+    def __init__(self):
+        self._flags = []
+
     def use_api(self, api: K8sApi):
         self._api = api
-        self._flags = []
 
     @abstractmethod
     def deploy(self, k8s_object: BaseObj, existing_object: Optional[BaseObj], namespace: str):
