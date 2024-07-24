@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from typing import Optional, Dict, List, Set
 from typing import TYPE_CHECKING
 
@@ -18,7 +17,6 @@ class YmlTemplateProcessor(Log, TreeProcessor):
     Processes yml files by replacing any string placeholders.
     """
 
-    VAR_PATTERN = re.compile(r'\${(.+?)}')
     KEY_FIELD_MERGE: str = '_merge'
 
     _replacements: Dict[str, any] = {}
@@ -126,20 +124,60 @@ class YmlTemplateProcessor(Log, TreeProcessor):
     def _replace(self, item: str) -> any:
         """
         Replaces the given variable with the actual value
-        :param item: Variable in the format "${KEY}"
+        :param item: Variable in the format "${KEY}" "$$" will be escaped to "$"
         :return: Value or item if no replacement was found
         """
-        for variable, value in self._replacements.items():
-            if item == '${' + variable + '}':
-                # Item only contains a tag, simple replace (non textual)
-                return value
-            # The variable tag is surrounded by other str or other tags
-            item = item.replace('${' + variable + '}', str(value))
+        new_item = ''
+        var_name_buffer = ''
+        mode = 0
+        for char in item:
+            if mode == 0:  # Search for tag start $
+                if char == '$':
+                    mode = 1
+                    continue
+                new_item += char
+                continue
 
-        # Search for any missing variables
-        if isinstance(item, str):
-            self._missing_vars.extend(self.VAR_PATTERN.findall(item))
-        return item
+            if mode == 1:  # After $
+                if char == '$':
+                    # Escaped $
+                    new_item += '$'
+                    mode = 0
+                    continue
+
+                if char == '{':
+                    mode = 2
+                    var_name_buffer = ''
+                    continue
+
+                new_item += char
+                mode = 0
+                continue
+
+            if mode == 2:  # After ${, search for end }
+                if char == '}':
+                    # End of variable tag found
+                    mode = 0
+                    new_val = self._replacements.get(var_name_buffer)
+                    if new_val is None:
+                        self._missing_vars.append(var_name_buffer)
+                        continue
+
+                    # The new_val can be an object as well,
+                    # but we can only replace it if the given item
+                    # only refers to this variable and is not a combination of strings
+                    if item == '${' + var_name_buffer + '}':
+                        return new_val
+
+                    if not isinstance(new_val, str):
+                        raise ValueError(f'Invalid replacement for {var_name_buffer}: Expected string, got {new_val}.\n'
+                                         f'Non string replacements are only possible for single variable references.')
+                    new_item += new_val
+                    continue
+                var_name_buffer += char
+                continue
+
+        return new_item
 
     def _load_replacements(self):
         """
@@ -166,10 +204,9 @@ class YmlTemplateProcessor(Log, TreeProcessor):
         Resolves any references in the given replacements (in place)
         :param data: Replacements
         """
-
-        found_var = True
-        while found_var:
-            found_var = False
+        found_var_to_replace = True
+        while found_var_to_replace:
+            found_var_to_replace = False
             for key, value in data.items():
                 if isinstance(value, dict):
                     # A replacement might be an object
@@ -180,16 +217,8 @@ class YmlTemplateProcessor(Log, TreeProcessor):
                     continue
 
                 # The replacement value might refer to another variable
-                for variable_name in self.VAR_PATTERN.findall(value):
-                    new_value = data.get(variable_name, self._replacements.get(variable_name))
-                    if new_value is None:
-                        self.log.warning('Missing referenced variable: ' + variable_name)
-                        continue
-                    if value == '${' + variable_name + '}':
-                        # Replace the entire value since the replacement value only consists of the ${} tag
-                        data[key] = new_value
-                        found_var = True
-                        continue
-
-                    data[key] = value.replace('${' + variable_name + '}', str(new_value))
-                    found_var = True
+                new_val = self._replace(value)
+                if new_val != value:
+                    data[key] = new_val
+                    found_var_to_replace = True
+                    continue

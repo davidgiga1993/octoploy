@@ -13,6 +13,7 @@ name: hello
 vars:
     MY_VAR: testVal
     IMAGE_NAME: image
+    NUMBER: 10
     MY_OBJECT:
         someItem: 1
         someOtherItem: 2
@@ -25,6 +26,7 @@ vars:
             'apiVersion': 'v1',
             'root': {
                 'item': '${APP_NAME}',
+                'number': '${NUMBER}',
                 'object': '${MY_OBJECT}',
                 'list': [{
                     'other': '${APP_NAME}/${IMAGE_NAME}'
@@ -35,6 +37,7 @@ vars:
             }}
         proc.process(BaseObj(data))
         self.assertEqual('hello', data['root']['item'])
+        self.assertEqual(10, data['root']['number'])
         self.assertEqual('hello/image', data['root']['list'][0]['other'])
         self.assertEqual('testVal', data['root']['sub']['item2'])
         self.assertEqual({
@@ -67,6 +70,22 @@ vars:
         self.assertEqual('hello', data['root']['item'])
         self.assertEqual('hello', data['root']['list'][0]['other'])
         self.assertEqual('testVal', data['root']['sub']['item2'])
+
+    def test_escaping(self):
+        with mock.patch('builtins.open', mock.mock_open(read_data='''
+name: hello
+vars:
+    MY_VAR: testVal
+''')):
+            app_config = AppConfig('', '')
+
+        proc = YmlTemplateProcessor(app_config)
+        data = {
+            'kind': '$${APP_NAME}${APP_NAME}Test${APP_NAME}',
+            'apiVersion': ''
+        }
+        proc.process(BaseObj(data))
+        self.assertEqual('${APP_NAME}helloTesthello', data['kind'])
 
     def test_merge_var_inline(self):
         with mock.patch('builtins.open', mock.mock_open(read_data='''
