@@ -78,7 +78,7 @@ class AppDeployRunner(Log):
 
         # Resolve all templating references
         template_processor = self._app_config.get_template_processor()
-        template_processor.parent(self._root_config.get_template_processor())
+        template_processor.parents([self._root_config.get_template_processor()])
 
         self._apply_templates(self._app_config.get_pre_template_refs(), template_processor)
         self._load_files(self._app_config.get_config_root(), template_processor)

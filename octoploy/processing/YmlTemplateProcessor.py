@@ -19,22 +19,27 @@ class YmlTemplateProcessor(Log, TreeProcessor):
 
     KEY_FIELD_MERGE: str = '_merge'
 
-    _replacements: Dict[str, any] = {}
+    _config: BaseConfig
+    _replacements: Dict[str, any]
+    _parents: List[YmlTemplateProcessor]
+    _child: Optional[YmlTemplateProcessor]
+
+    _missing_vars: List[str]
+    """
+    List of all variables which have not been replace because
+    there was no value defined for them
+    """
 
     def __init__(self, config: BaseConfig):
         super().__init__()
-        self._missing_vars = []  # type: List[str]
-        """
-        List of all variables which have not been replace because
-        there was no value defined for them
-        """
-        self._config = config  # type: BaseConfig
-        self._parent = None  # type: Optional[YmlTemplateProcessor]
-        self._child = None  # type: Optional[YmlTemplateProcessor]
+        self._missing_vars = []
 
+        self._config = config
+        self._parents = []
+        self._child = None
         self._replacements = {}
 
-    def parent(self, template_processor: YmlTemplateProcessor):
+    def parents(self, template_processor: List[YmlTemplateProcessor]):
         """
         Inherits all replacements from the given processor.
         If the same value is defined in this and the parent, the definition of this processor will override
@@ -42,9 +47,9 @@ class YmlTemplateProcessor(Log, TreeProcessor):
 
         :param template_processor: Child processor
         """
-        if self._parent is not None:
-            raise ValueError('Parent processor already defined')
-        self._parent = template_processor
+        if len(self._parents) > 0:
+            raise ValueError('Parent processors already defined')
+        self._parents = template_processor
 
     def child(self, template_processor: YmlTemplateProcessor):
         """
@@ -91,8 +96,8 @@ class YmlTemplateProcessor(Log, TreeProcessor):
         :return: Param names
         """
         params = set()
-        if self._parent is not None:
-            params.update(self._parent._get_params())
+        for parent in self._parents:
+            params.update(parent._get_params())
         params.update(self._config.get_params())
         if self._child is not None:
             params.update(self._child._get_params())
@@ -192,8 +197,8 @@ class YmlTemplateProcessor(Log, TreeProcessor):
         :return: Replacements
         """
         replacements = {}
-        if self._parent is not None:
-            replacements.update(self._parent._get_replacements())
+        for parent in self._parents:
+            replacements.update(parent._get_replacements())
         replacements.update(self._config.get_replacements())
         if self._child is not None:
             replacements.update(self._child._get_replacements())

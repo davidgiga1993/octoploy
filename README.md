@@ -7,6 +7,8 @@ required objects.
 
 This tool was born in the need to a simple templating system which can track changes (similar to terraform) but
 with k8s object awareness.
+In addition, it was important for us to have proper native yml support, including object merging - something that was missing
+in other templating engines.
 
 ## Installation
 
@@ -19,19 +21,25 @@ pip install octoploy
 
 ## Usage
 
+In octoploy you define **apps**, each app can contain multiple k8s yml files. Additionally, there is a **root** configuration
+which describes the k8s namespace, context, defines global variables and references libraries.
+
+All yml files will be pre-processed before they will be imported. This includes replacing any known `${KEY}` variables
+with their associate values and merging referenced templates.
+
+
 ```mermaid
 graph  TB
     root[Root folder<br>_root.yml]
     root --> app1[App 1<br>_index.yml<br>k8s yml files]
     root --> app2[App 2<br>_index.yml<br>k8s yml files]
+    
+    lib[Library folder<br>_root.yml]
+    lib --> common[Common<br>_index.yml<br>k8s yml files]
+    
+    root --> lib
 
 ```
-
-In octoploy you define apps, each app can contain multiple yml files. Additionally, there is a project configuration
-which describes the k8 namespace.
-
-All yml files will be pre-processed before they will be imported. This includes replacing any known `${KEY}` variables
-with their associate values and merging referenced templates.
 
 ### Deploy / Plan
 
@@ -59,15 +67,18 @@ This command executes the `on-config-change` trigger
 octoploy reload prometheus
 ```
 
-### Config structure
+### Folder structure
 
 ```text
-configs
-|- _root.yml <- Root config
-|- my-app <- App
+octoploy
+|- _root.yml <- Root config, describes the k8s namespace and variables
+|- my-app <- Any folder with an _index.yml file is considered an app
     |- _index.yml <- App config
-    |- dc.yml <- Openshift/K8 yml file(s)
-    |- secrets.yml < Encrypted secrets file
+    |- deployment.yml <- K8s yml file(s)
+    |- secrets.yml
+    
+Using this structure you could run `octoploy deploy my-app` to deploy
+all yml files inside the my-app folder. 
 ```
 
 ### Root config
@@ -75,30 +86,44 @@ configs
 Here is a sample `_root.yml` file
 
 ```yml
-# Name of the namespace / openshift project
-namespace: 'my-oc-project'
+# Name of the k8s namespace / openshift project
+namespace: 'my-project'
 
 # K8s context which should be used for deploying
 context: 'my-k8s-cluster-config'
 
-# OPTIONAL STUFF
+#####################
+# OPTIONAL SECTION
+#####################
+
+# Name of the configmap which should hold the octoploy state
+stateName: 'octoploy-state'
+
 # Global variables
 vars:
   DOMAIN: "dev-core.org"
+
+# Inherit libraries
+libs:
+  - common
 ```
 
 ### App config
 
-An app is represented by a folder containing an `_index.yml` file and any additional openshift yml files. The following
-shows all available parameters. Only the first 3 are required.
+An app is represented by a folder containing an `_index.yml` file. The following
+shows all available parameters.
 
 ```yml
+# Name of the deployment, available as APP_NAME variable
+name: 'my-app'
+
+#####################
+# OPTIONAL SECTION
+#####################
+
 # The type defines how the app will be used.
 # Can be "app" (default) or "template"
 type: 'app'
-
-# Name of the deployment, available as variable, see below
-name: 'my-app'
 
 # Template which should be applied, none by default
 applyTemplates: [ ]
@@ -109,7 +134,7 @@ postApplyTemplates: [ ]
 # Action which should be executed if a configmap has been changed
 on-config-change:
   # Available options: 
-  # deploy (re-deploys the deployment config - openshift specific)
+  # deploy (triggers a restart of the deployment)
   - deploy
 
   # exec (Executes a command inside the running container)
@@ -129,6 +154,7 @@ params:
   - PASSWORD
 
 # File based configmaps
+# More modes available, see below
 configmaps:
   - name: nginx-config
     files:
@@ -173,7 +199,7 @@ vars:
 ```
 
 ```yml
-# dc.yml
+# deployment.yml
 spec:
   replicas: 1
   _merge: ${someMerging}
@@ -387,7 +413,8 @@ params:
 ```yml
 # prod/_root.yml
 namespace: 'prod-project'
-inherit: testLib
+libraries: 
+  - testLib
 
 # Required parameters
 vars:
@@ -397,6 +424,19 @@ vars:
 ```
 
 When you now deploy the `prod` project it will inherit all apps inside `testLib`.
+
+In case you only want to inherit some of the apps from the library, you can disable certain apps using:
+
+```yaml
+# prod/_root.yml
+namespace: 'prod-project'
+libraries: 
+  - testLib
+
+apps: # We don't want to use "app1" of the inherited library
+    app1:
+      enabled: false
+```
 
 ## Secrets
 
@@ -420,8 +460,6 @@ The ConfigMap contains  all managed objects and their md5 sum. If this hash has 
 applied. If the object does already exist, but is not listed in the state it will simply be added to the state.
 
 You can modify the name of the configmap by setting the `stateName` variable in the `_root.yml` file.
-
-Currently, the actual fields of the yml files are not compared, however this is a planned feature.  
 
 ## Examples
 

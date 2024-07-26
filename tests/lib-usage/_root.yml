@@ -1,5 +1,6 @@
 namespace: 'oc-project'
-inherit: 'lib'
+libs:
+  - 'lib'
 
 vars:
   lib-param: 'paramValue'

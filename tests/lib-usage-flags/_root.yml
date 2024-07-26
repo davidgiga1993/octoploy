@@ -1,5 +1,6 @@
 namespace: 'oc-project'
-inherit: 'lib'
+libs:
+  - 'lib'
 
 apps:
   var-loader-app:

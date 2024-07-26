@@ -75,25 +75,29 @@ class RootConfig(BaseConfig):
     This may only be set if this config is a library.
     """
 
+    _libraries: List[RootConfig]
+    """
+    List of libraries that should be inherited into this config
+    """
+
     def __init__(self, config_root: str, path: str):
         super().__init__(path)
         self.log = Log(__name__).log
         self._config_root = config_root
         self._k8s_api = None
-        self._library = None  # type: Optional[RootConfig]
+        self._libraries = []
         self._global_var_overrides: Dict[str, str] = {}
 
+        parent_dir = os.path.abspath(os.path.join(path, os.pardir, os.pardir))
         inherit = self.data.get('inherit')
         if inherit is not None:
-            # Use a library
-            parent_dir = os.path.abspath(os.path.join(path, os.pardir, os.pardir))
+            self.log.warning('"inherit" field is deprecated, use "libraries" instead')
             lib_dir = os.path.join(parent_dir, inherit)
-            if not os.path.isdir(lib_dir):
-                raise FileNotFoundError('Library not found: ' + lib_dir)
-            self._library = RootConfig.load(lib_dir)
-            self._library._parent = self
-            if not self._library.is_library():
-                raise ConfigError('Project ' + inherit + ' referenced as library but is not a library')
+            self._load_library(lib_dir)
+
+        for lib in self.data.get('libraries', []):
+            lib_dir = os.path.join(parent_dir, lib)
+            self._load_library(lib_dir)
 
         state_name = self.data.get('stateName', '')
         self._state = StateTracking(self.create_api(), state_name)
@@ -200,9 +204,10 @@ class RootConfig(BaseConfig):
 
     def get_template_processor(self) -> YmlTemplateProcessor:
         root_processor = super().get_template_processor()
-        if self._library is not None:
-            processor = self._library.get_template_processor()
-            root_processor.parent(processor)
+        parent_processors = []
+        for lib in self._libraries:
+            parent_processors.append(lib.get_template_processor())
+        root_processor.parents(parent_processors)
         return root_processor
 
     def get_replacements(self) -> Dict[str, str]:
@@ -254,15 +259,19 @@ class RootConfig(BaseConfig):
                 raise ValueError(f'The app name {app_name} has already been used')
             names.add(app_name)
             items.append(app_config)
-        if self._library is not None:
-            items.extend(self._library.load_app_configs())
+        for library in self._libraries:
+            items.extend(library.load_app_configs())
         return items
 
     def load_app_config(self, name: str) -> AppConfig:
         folder_path = os.path.join(self._config_root, name)
         if not os.path.isdir(folder_path):
-            if self._library is not None:
-                return self._library.load_app_config(name)
+            # Search in library
+            for library in self._libraries:
+                try:
+                    return library.load_app_config(name)
+                except FileNotFoundError:
+                    continue
             raise FileNotFoundError('App folder not found: ' + folder_path)
 
         index_file = os.path.join(folder_path, '_index.yml')
@@ -272,3 +281,16 @@ class RootConfig(BaseConfig):
 
         variables = self.get_replacements()
         return AppConfig(folder_path, index_file, variables, root=self)
+
+    def _load_library(self, lib_dir: str):
+        """
+        Loads the library project at the given directory
+        :param lib_dir: Path to the root of the library directory
+        """
+        if not os.path.isdir(lib_dir):
+            raise FileNotFoundError('Library not found: ' + lib_dir)
+        library = RootConfig.load(lib_dir)
+        library._parent = self
+        if not library.is_library():
+            raise ConfigError(f'{lib_dir} referenced but is not marked as library')
+        self._libraries.append(library)
