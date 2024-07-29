@@ -4,6 +4,7 @@ import argparse
 
 from octoploy.backup.BackupGenerator import BackupGenerator
 from octoploy.config.Config import RootConfig, RunMode
+from octoploy.converter.HelmToOcto import HelmToOcto
 from octoploy.deploy.AppDeploy import AppDeployment
 from octoploy.processing.DecryptionProcessor import DecryptionProcessor
 from octoploy.state.StateMover import StateMover
@@ -84,6 +85,7 @@ def deploy_app(args):
     mode.set_override_env(args.env)
     _run_app_deploy(args.config_dir, args.name[0], mode)
 
+
 def delete_app(args):
     mode = RunMode()
     mode.delete = True
@@ -110,6 +112,16 @@ def deploy_all(args):
 def create_backup(args):
     root_config = load_project(args.config_dir)
     BackupGenerator(root_config).create_backup(args.name[0])
+
+
+def convert_helm(args):
+    dest = args.config_dir
+    if dest == '':
+        dest = '.'
+    converter = HelmToOcto(dest)
+    for f in args.filter:
+        converter.include(f)
+    converter.convert(args.file)
 
 
 def encrypt_secrets(args):
@@ -170,6 +182,11 @@ def main():
     state_mv_parser.add_argument('--to', dest='to', help='Configmap where the state should be moved to (optional).'
                                                          'Format: configmapSuffix|namespace/configmapSuffix')
     state_mv_parser.set_defaults(func=move_state)
+
+    helm_parser = subparsers.add_parser('helm-convert', help='Converts a rendered helm chart yml file to octoploy')
+    helm_parser.add_argument('file', help='Yml file to be converted')
+    helm_parser.add_argument('--filter', dest='filter', help='Component names to be converted - optional', nargs='*')
+    helm_parser.set_defaults(func=convert_helm)
 
     encrypt_parser = subparsers.add_parser('encrypt', help='Encrypts k8s secrets objects')
     encrypt_parser.add_argument('file', help='Yml file to be encrypted', nargs=1)
