@@ -119,8 +119,9 @@ def convert_helm(args):
     if dest == '':
         dest = '.'
     converter = HelmToOcto(dest)
-    for f in args.filter:
-        converter.include(f)
+    if args.filter is not None:
+        for f in args.filter:
+            converter.include(f)
     converter.convert(args.file)
 
 
