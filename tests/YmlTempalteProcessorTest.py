@@ -7,6 +7,41 @@ from octoploy.processing.YmlTemplateProcessor import YmlTemplateProcessor
 
 class YmlTemplateProcessorTest(TestCase):
 
+    def test_keep(self):
+        with mock.patch('builtins.open', mock.mock_open(read_data='''
+name: hello
+vars:
+    MY_VAR: testVal
+    IMAGE_NAME: image
+''')):
+            app_config = AppConfig('', '')
+
+        proc = YmlTemplateProcessor(app_config)
+        data = {
+            'kind': 'Test',
+            'apiVersion': 'v1',
+            'root': {
+                '1': '$',
+                '2': '$$',
+                '3': 'item$',
+                '4': 'my$var',
+                '5': '$item',
+                '6': '${item',
+                '7': '${',
+                '8': '${nonExistent}',
+                '9': '${nonExistent}Other${MY_VAR}',
+            }}
+        proc.process(BaseObj(data))
+        self.assertEqual('$', data['root']['1'])
+        self.assertEqual('$', data['root']['2'])
+        self.assertEqual('item$', data['root']['3'])
+        self.assertEqual('my$var', data['root']['4'])
+        self.assertEqual('$item', data['root']['5'])
+        self.assertEqual('${item', data['root']['6'])
+        self.assertEqual('${', data['root']['7'])
+        self.assertEqual('${nonExistent}', data['root']['8'])
+        self.assertEqual('${nonExistent}OthertestVal', data['root']['9'])
+
     def test_replace(self):
         with mock.patch('builtins.open', mock.mock_open(read_data='''
 name: hello
