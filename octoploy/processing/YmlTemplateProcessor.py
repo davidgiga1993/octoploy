@@ -155,7 +155,8 @@ class YmlTemplateProcessor(Log, TreeProcessor):
                     var_name_buffer = ''
                     continue
 
-                new_item += char
+                # Not a variable tag, just add the $ and the current char
+                new_item += '$' + char
                 mode = 0
                 continue
 
@@ -166,9 +167,10 @@ class YmlTemplateProcessor(Log, TreeProcessor):
                     new_val = self._replacements.get(var_name_buffer)
                     if new_val is None:
                         self._missing_vars.append(var_name_buffer)
+                        new_item += '${' + var_name_buffer + '}'
                         continue
 
-                    # The new_val can be an object as well,
+                    # The new_val can be an "object" as well,
                     # but we can only replace it if the given item
                     # only refers to this variable and is not a combination of strings
                     if item == '${' + var_name_buffer + '}':
@@ -181,6 +183,13 @@ class YmlTemplateProcessor(Log, TreeProcessor):
                     continue
                 var_name_buffer += char
                 continue
+
+        if mode == 1:
+            # Ended with a $
+            new_item += '$'
+        if mode == 2:
+            # Ended with a ${, so we need to add the buffer
+            new_item += '${' + var_name_buffer
 
         return new_item
 

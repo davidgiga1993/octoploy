@@ -21,7 +21,7 @@ class DynamicConfigMap:
 
     def build_object(self, config_root: str) -> ConfigMapObject:
         """
-        Creates an configmap object out of this definition
+        Creates a configmap object out of this definition
         """
         config_data = {}
         data = {
