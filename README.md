@@ -104,7 +104,7 @@ vars:
   DOMAIN: "dev-core.org"
 
 # Inherit libraries
-libs:
+libraries:
   - common
 ```
 

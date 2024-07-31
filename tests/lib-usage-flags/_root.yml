@@ -1,5 +1,5 @@
 namespace: 'oc-project'
-libs:
+libraries:
   - 'lib'
 
 apps:
