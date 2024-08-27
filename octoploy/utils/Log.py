@@ -1,4 +1,5 @@
 import logging
+import re
 import sys
 
 
@@ -18,6 +19,10 @@ class ColorFormatter(logging.Formatter):
         logging.ERROR: red + format + reset,
         logging.CRITICAL: bold_red + format + reset
     }
+
+    @staticmethod
+    def decolorize(val: str) -> str:
+        return re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])').sub('', val)
 
     @staticmethod
     def colorize(val: str, color: str) -> str:
