@@ -1,5 +1,5 @@
 import difflib
-from typing import Dict, List, Iterator
+from typing import Dict, List, Iterator, Set
 
 from octoploy.api.Kubectl import K8sApi
 from octoploy.k8s.BaseObj import BaseObj
@@ -22,15 +22,20 @@ class K8sObjectDiff:
         :param current: The current object in the cluster
         :param new: The new object
         """
+        mask_values: List[List[str]] = []
+        if current.is_kind('secret') or new.is_kind('secret'):
+            mask_values.append(['spec', 'data'])
+            mask_values.append(['spec', 'stringData'])
+
         current_data = self._filter_injected(current.data)
 
         # Server side dry-run to get the same format / list sorting
         new = self._api.dry_run(YmlWriter.dump(new.data))
         new_data = self._filter_injected(new.data)
-        self._print_diff(current_data, new_data, [])
+        self._print_diff(current_data, new_data, [], mask_values)
 
     def _print_diff(self, current_data: Dict[str, any], new_data: Dict[str, any],
-                    context: List[str]):
+                    context: List[str], mask_values: List[List[str]]):
         if current_data is None:
             current_data = {}
         if new_data is None:
@@ -42,9 +47,11 @@ class K8sObjectDiff:
         for key in all_keys:
             current_entry = current_data.get(key)
             new_entry = new_data.get(key)
-            self._print_value_diff(current_entry, new_entry, context + [key])
+            self._print_value_diff(current_entry, new_entry, context + [key], mask_values)
 
-    def _print_value_diff(self, current_entry, new_entry, context):
+    def _print_value_diff(self, current_entry, new_entry, context: List[str], mask_values: List[List[str]]):
+        mask_value: bool = context in mask_values
+
         if isinstance(current_entry, list) or isinstance(new_entry, list):
             if current_entry is None:
                 current_entry = []
@@ -59,14 +66,20 @@ class K8sObjectDiff:
                     current_val = current_entry[i]
                 if i < len(new_entry):
                     new_val = new_entry[i]
-                self._print_value_diff(current_val, new_val, context + [f'[{i}]'])
+                self._print_value_diff(current_val, new_val, context + [f'[{i}]'], mask_values)
             return
 
         if isinstance(current_entry, dict) or isinstance(new_entry, dict):
-            self._print_diff(current_entry, new_entry, context)
+            self._print_diff(current_entry, new_entry, context, mask_values)
             return
         if current_entry == new_entry:
             return
+
+        if mask_value:
+            if current_entry is not None:
+                current_entry = '***'
+            if new_entry is not None:
+                new_entry = '***'
 
         if current_entry is None:
             # The entire tree will be added
