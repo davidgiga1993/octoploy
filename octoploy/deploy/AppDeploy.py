@@ -176,4 +176,5 @@ class AppDeployRunner(Log):
             self._bundle.add_object(cm_object.data, None if cm_object.disable_templating else template_processor)
 
         for include in app_config.get_includes():
+            self.log.debug(f'Including file: {include}')
             self._load_file(include, template_processor)
