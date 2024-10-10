@@ -82,7 +82,7 @@ class AppDeployRunner(Log):
 
         self._apply_templates(self._app_config.get_pre_template_refs(), template_processor)
         self._load_files(self._app_config.get_config_root(), template_processor)
-        self._load_extra_configmaps(template_processor)
+        self._load_extras(self._app_config, template_processor)
         self._apply_templates(self._app_config.get_post_template_refs(), template_processor)
 
         # Additional processing
@@ -135,30 +135,45 @@ class AppDeployRunner(Log):
             # -> Recursively deploy them
             self._apply_templates(template.get_pre_template_refs(), child_template_processor)
             self._load_files(template.get_config_root(), child_template_processor)
+            self._load_extras(template, child_template_processor)
             self._apply_templates(template.get_post_template_refs(), child_template_processor)
 
     def _load_files(self, root: str, template_processor: YmlTemplateProcessor):
         """
-        Loads all yml files inside the given folder
+        Loads all k8s yml files inside the given folder
         :param root: Path to the root of the configs folder
+        :param template_processor: The template processor that should be used for those files
         """
         for item in os.listdir(root):
             path = os.path.join(root, item)
             if not os.path.isfile(path) or not item.endswith('.yml') or item.startswith('_'):
                 continue
-            try:
-                docs = Yml.load_docs(path)
-            except yaml.parser.ParserError as e:
-                self.log.error(f'Could not parse {path} {e}')
-                raise
-            for doc in docs:
-                self._bundle.add_object(doc, template_processor)
+            self._load_file(path, template_processor)
 
-    def _load_extra_configmaps(self, template_processor: YmlTemplateProcessor):
+    def _load_file(self, path: str, template_processor: YmlTemplateProcessor):
         """
-        Loads all defined file based configmaps
+        Loads the given k8s yml file
+        :param path: Path
+        :param template_processor: Template processor which should be used
+        """
+        try:
+            docs = Yml.load_docs(path)
+        except yaml.parser.ParserError as e:
+            self.log.error(f'Could not parse {path} {e}')
+            raise
+        for doc in docs:
+            self._bundle.add_object(doc, template_processor)
+
+    def _load_extras(self, app_config: AppConfig, template_processor: YmlTemplateProcessor):
+        """
+        Loads all additional k8s object defined in the app config such as
+        configmaps, file imports, ...
+        :param app_config: Config from which the extras should be loaded
         :param template_processor: Template processor which should be applied
         """
-        for config in self._app_config.get_config_maps():
-            cm_object = config.build_object(self._app_config.get_config_root())
+        for config in app_config.get_config_maps():
+            cm_object = config.build_object(app_config.get_config_root())
             self._bundle.add_object(cm_object.data, None if cm_object.disable_templating else template_processor)
+
+        for include in app_config.get_includes():
+            self._load_file(include, template_processor)

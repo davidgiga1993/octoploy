@@ -131,6 +131,12 @@ applyTemplates: [ ]
 # Templates which should be applied AFTER processing the other templates and base yml files
 postApplyTemplates: [ ]
 
+includes:
+  # List of additional k8s files that should be included
+  # and are located outside of this app folder.
+  # All paths are relative to this config file.
+  k8s: [ ]
+
 # Action which should be executed if a configmap has been changed
 on-config-change:
   # Available options: 
@@ -253,7 +259,7 @@ vars:
     loader: env
  ```
 
-### Templates
+### App Templates
 
 You can use templates to reuse and generate yml files. This might be useful when you want
 to attach sidecar containers to multiple apps. To do so you create a new app with the `type` field set

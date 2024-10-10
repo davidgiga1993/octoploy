@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import List
+from typing import List, Optional
 
 import yaml
 
@@ -25,7 +25,7 @@ class DeploymentBundle(Log):
         self.objects = []  # All objects which should be deployed
         self._pre_processor = pre_processor
 
-    def add_object(self, data: dict, template_processor: YmlTemplateProcessor):
+    def add_object(self, data: dict, template_processor: Optional[YmlTemplateProcessor]):
         """
         Adds a new object which should be deployed
         :param data: Object

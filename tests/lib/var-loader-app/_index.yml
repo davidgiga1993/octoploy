@@ -4,3 +4,8 @@ vars:
   CERT:
     loader: pem
     file: dummy.pem
+
+configmaps:
+  - name: nginx-config
+    files:
+      - file: "sample.txt"

@@ -4,3 +4,8 @@ vars:
   SECOND: "DEF"
   REMAPPED: "${PARAM_A}-1"
 applyTemplates: [ app-template-2 ]
+
+configmaps:
+  - name: test-config
+    files:
+      - file: "test.txt"

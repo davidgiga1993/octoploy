@@ -23,6 +23,12 @@ class AppDeploymentTest(TestCase):
         if os.path.isfile(self._tmp_file):
             os.remove(self._tmp_file)
 
+    def test_includes(self):
+        self._deploy('app', project='app_include_test')
+        with open(self._tmp_file) as f:
+            data = yaml.load(f, Loader=yaml.FullLoader)
+        self.assertEqual('ConfigMap', data['kind'])
+
     def test_inherit_vars(self):
         """
         Makes sure variables from the app are passed to the library
@@ -30,7 +36,8 @@ class AppDeploymentTest(TestCase):
         """
         self._deploy('app')
         with open(self._tmp_file) as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
+            docs = list(yaml.load_all(f, Loader=yaml.FullLoader))
+        data = docs[0]
         self.assertEqual('ABC', data['metadata']['name'])
         self.assertEqual('ABC-1', data['metadata']['REMAPPED'])
         self.assertEqual('ABC', data['metadata']['REMAPPED2'])
@@ -44,8 +51,16 @@ class AppDeploymentTest(TestCase):
         self._mode.var_override['globalVar'] = 'ext-override'
         self._deploy('app')
         with open(self._tmp_file) as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
-        self.assertEqual('ext-override', data['metadata']['GLOBAL_TEST'])
+            docs = list(yaml.load_all(f, Loader=yaml.FullLoader))
+        self.assertEqual('ext-override', docs[0]['metadata']['GLOBAL_TEST'])
+
+    def test_configmap_from_template(self):
+        self._deploy('app')
+        with open(self._tmp_file) as f:
+            docs = list(yaml.load_all(f, Loader=yaml.FullLoader))
+        self.assertEqual(2, len(docs))
+        self.assertEqual('global', docs[0]['metadata']['GLOBAL_TEST'])
+        self.assertEqual('test-config', docs[1]['metadata']['name'])
 
     def test_cm_types(self):
         self._deploy('cm-types')
@@ -56,13 +71,18 @@ class AppDeploymentTest(TestCase):
         self.assertIn('"y"', content)
 
     def test_library(self):
+        """
+        Makes sure library includes work as expected
+        :return:
+        """
         self._deploy(None, project='lib-usage')
 
         with open(self._tmp_file) as f:
             data = list(yaml.load_all(f, Loader=yaml.FullLoader))
         data.sort(key=lambda d: d['metadata']['name'])
-        self.assertEqual(2, len(data))
-        self.assertEqual('paramValue', data[1]['metadata']['name'])
+        self.assertEqual(3, len(data))
+        self.assertEqual('nginx-config', data[0]['metadata']['name'])
+        self.assertEqual('paramValue', data[2]['metadata']['name'])
 
     def test_library_inherit_app_flags(self):
         self._deploy(None, project='lib-usage-flags')
@@ -75,7 +95,7 @@ class AppDeploymentTest(TestCase):
         self._deploy('var-loader-app', project='lib-usage')
 
         with open(self._tmp_file) as f:
-            data = yaml.load(f, Loader=yaml.FullLoader)
+            data = list(yaml.load_all(f, Loader=yaml.FullLoader))[0]
         expected = '''-----BEGIN PRIVATE KEY-----
 KEY STUFF
 -----END PRIVATE KEY-----

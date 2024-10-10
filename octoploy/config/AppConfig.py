@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING
 
 from octoploy.deploy.DeploymentMode import DeploymentMode, ReplaceDeploymentMode, ApplyDeploymentMode
@@ -26,6 +27,17 @@ class AppConfig(BaseConfig):
         super().__init__(path, external_vars)
         self._config_root = config_root
         self._root = root
+
+    def get_includes(self) -> List[str]:
+        """
+        Returns a list of k8s files that should be included.
+        The path of the files is relative to the root of this app
+        :return: List of paths
+        """
+        files = DictUtils.get(self.data, 'includes.k8s')
+        if files is None:
+            return []
+        return [os.path.join(self._config_root, f) for f in files]
 
     def get_config_maps(self) -> List[DynamicConfigMap]:
         """
