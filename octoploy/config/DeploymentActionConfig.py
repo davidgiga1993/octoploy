@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, List
 
 from octoploy.k8s.BaseObj import BaseObj
 from octoploy.utils.Log import Log
@@ -24,18 +24,17 @@ class DeploymentActionConfig(Log):
     def run(self, k8s: K8sApi, all_objects: List[BaseObj]):
         namespace = self._app_config.get_root().get_namespace_name()
         if self._data == 'deploy':
-            deployment_name = self._app_config.get_name()
-            deployment_obj = self.get_deployment_object(deployment_name, all_objects)
-            if deployment_obj is None:
-                self.log.warning(f'Deployment object {deployment_name} not found')
+            objects = self.get_rollout_objects(all_objects)
+            if len(objects) == 0:
+                self.log.warning(f'No objects to restart found')
                 return
 
-            try:
-                k8s.rollout(deployment_name, namespace=deployment_obj.namespace)
-            except Exception as e:
-                if '(NotFound)' in str(e):
-                    self.log.warning(f'Could not restart {deployment_name} {deployment_obj.namespace}:\n{e}')
-                    return
+            for obj in objects:
+                try:
+                    k8s.rollout(obj.kind, obj.name, namespace=obj.namespace)
+                except Exception as e:
+                    if '(NotFound)' in str(e):
+                        self.log.warning(f'Could not restart {obj.get_fqn()} in namespace {obj.namespace}: {e}')
             return
 
         exec_config = self._data.get('exec', None)
@@ -51,9 +50,12 @@ class DeploymentActionConfig(Log):
             return
 
     @staticmethod
-    def get_deployment_object(deployment_name: str, all_objects: List[BaseObj]) -> Optional[BaseObj]:
+    def get_rollout_objects(all_objects: List[BaseObj]) -> List[BaseObj]:
+        out = []
         for obj in all_objects:
-            if (obj.is_kind('Deployment') or obj.is_kind('DeploymentConfig')) \
-                    and obj.name == deployment_name:
-                return obj
-        return None
+            if obj.is_kind('Deployment') \
+                    or obj.is_kind('DaemonSet') \
+                    or obj.is_kind('StatefulSet') \
+                    or obj.is_kind('DeploymentConfig'):
+                out.append(obj)
+        return out

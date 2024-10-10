@@ -105,10 +105,11 @@ class K8sApi(Log):
         raise NotImplemented
 
     @abstractmethod
-    def rollout(self, name: str, namespace: Optional[str] = None):
+    def rollout(self, kind: str, name: str, namespace: Optional[str] = None):
         """
-        Re-Deploys the latest DC with the given name
-        :param name: Deployment name
+        Restarts the given kind/name
+        :param kind: Object kind
+        :param name: Object name
         :param namespace: Namespace
         """
         raise NotImplemented
@@ -232,7 +233,7 @@ class Oc(K8sApi):
 
         return pods
 
-    def rollout(self, name: str, namespace: Optional[str] = None):
+    def rollout(self, kind: str, name: str, namespace: Optional[str] = None):
         """
         Re-Deploys the latest DC with the given name
         :param name: DC name
@@ -298,8 +299,8 @@ class Oc(K8sApi):
 
 
 class K8s(Oc):
-    def rollout(self, name: str, namespace: Optional[str] = None):
-        self._exec(['rollout', 'restart', 'deployment', name], namespace=namespace)
+    def rollout(self, kind: str, name: str, namespace: Optional[str] = None):
+        self._exec(['rollout', 'restart', kind, name], namespace=namespace)
 
     def tag(self, source: str, dest: str, namespace: Optional[str] = None):
         raise NotImplemented('Not available for k8')
