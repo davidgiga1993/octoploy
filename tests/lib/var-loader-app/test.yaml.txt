@@ -1,0 +1,4 @@
+object:
+   subObject:
+      - Hello
+      - World

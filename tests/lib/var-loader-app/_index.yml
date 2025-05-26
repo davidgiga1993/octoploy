@@ -4,6 +4,10 @@ vars:
   CERT:
     loader: pem
     file: dummy.pem
+  EXT_YML:
+    loader: file
+    conversion: yml
+    file: test.yaml.txt
 
 configmaps:
   - name: nginx-config

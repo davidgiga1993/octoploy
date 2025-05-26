@@ -3,3 +3,4 @@ apiVersion: v1
 KEY: ${CERT_KEY}
 metadata:
   name: other
+  loaded_yml: ${EXT_YML}

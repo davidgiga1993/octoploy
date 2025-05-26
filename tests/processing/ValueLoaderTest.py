@@ -30,3 +30,11 @@ class ValueLoaderTest(TestCase):
         items = loader.load({'file': 'var-loader-app/dummy.pem'})
         self.assertIsNotNone(items.get(''))
         self.assertIn('BEGIN', items.get(''))
+
+
+    def test_yaml_load(self):
+        factory = ValueLoaderFactory()
+        parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        loader = factory.create(BaseConfig(os.path.join(parent, 'tests', 'lib', '_root.yml')), 'file')
+        items = loader.load({'file': 'var-loader-app/test.yaml.txt', 'conversion': 'yml'})
+        self.assertIsNotNone(items.get('object'))

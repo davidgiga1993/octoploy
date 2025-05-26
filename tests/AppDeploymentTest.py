@@ -101,6 +101,9 @@ KEY STUFF
 -----END PRIVATE KEY-----
 '''
         self.assertEqual(expected, data['KEY'])
+        ext_yml = data['metadata']['loaded_yml']
+        self.assertIsInstance(ext_yml, dict)
+        self.assertIsInstance(ext_yml['object'], dict)
 
     def test_for_each(self):
         self._deploy('app-for-each')

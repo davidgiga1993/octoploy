@@ -6,6 +6,8 @@ from abc import abstractmethod
 from typing import Dict
 from typing import TYPE_CHECKING
 
+import yaml
+
 if TYPE_CHECKING:
     from octoploy.config.BaseConfig import BaseConfig
 from octoploy.utils.Cert import Cert
@@ -17,7 +19,7 @@ class ValueLoader:
         self._config = config
 
     @abstractmethod
-    def load(self, data: Dict) -> Dict[str, str]:
+    def load(self, data: Dict) -> Dict[str, any]:
         pass
 
     def _resolve_path(self, path: str) -> str:
@@ -45,6 +47,9 @@ class FileLoader(ValueLoader):
         if conversion is not None:
             if conversion == 'base64':
                 return {'': base64.b64encode(content).decode('utf-8')}
+            if conversion == 'yml' or conversion == 'yaml':
+                data = yaml.safe_load(content)
+                return {'': data}
             raise ValueError(f'Unknown conversion {conversion}')
 
         return {'': content.decode(encoding)}

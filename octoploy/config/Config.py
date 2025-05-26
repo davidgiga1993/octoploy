@@ -66,7 +66,7 @@ class RootConfig(BaseConfig):
 
     _app_flags: Dict[str, Dict[str, any]]
     """
-    Holds any override parameters for 
+    Holds any override parameters for the various defined apps
     """
 
     _parent: Optional[RootConfig] = None
