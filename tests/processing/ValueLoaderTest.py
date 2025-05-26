@@ -37,4 +37,4 @@ class ValueLoaderTest(TestCase):
         parent = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
         loader = factory.create(BaseConfig(os.path.join(parent, 'tests', 'lib', '_root.yml')), 'file')
         items = loader.load({'file': 'var-loader-app/test.yaml.txt', 'conversion': 'yml'})
-        self.assertIsNotNone(items.get('object'))
+        self.assertIsNotNone(items.get('').get('object'))
