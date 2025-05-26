@@ -45,6 +45,11 @@ class FileLoader(ValueLoader):
         if conversion is not None:
             if conversion == 'base64':
                 return {'': base64.b64encode(content).decode('utf-8')}
+            if conversion.startswith("indent") and conversion[6:].isdigit():
+                indent = int(conversion[6:])
+                content = content.decode(encoding).replace('\n', '\n' + ' ' * indent)
+                return {'': content}
+
             raise ValueError(f'Unknown conversion {conversion}')
 
         return {'': content.decode(encoding)}
