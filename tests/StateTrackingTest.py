@@ -103,15 +103,15 @@ class StateTrackingTest(TestCase):
 
         octoploy.octoploy._run_app_deploy('app_deploy_test', 'app', self._mode)
 
-        self.assertEqual(4, len(self._dummy_api.commands))
+        self.assertEqual(5, len(self._dummy_api.commands))
         self.assertEqual(['get', 'ConfigMap/octoploy-state', '-o', 'json'], self._dummy_api.commands[0].args)
         state_update = self._dummy_api.commands[-1]
         self.assertEqual(['apply', '-f', '-'], state_update.args)
-        self.assertStateEqual([{"context": "ABC",
-                                "hash": "e2e4634c5cd31a1b58da917e8b181b28",
-                                "fqn": "Deployment/ABC",
-                                "namespace": "oc-project",
-                                }], state_update.stdin)
+        self.assertStateEqual(
+            [
+                {'context': 'ABC', 'fqn': 'ConfigMap/test-config', 'hash': '866c0e956381bbbd6c8b42abfd19895c', 'namespace': 'oc-project'},
+                {'context': 'ABC', 'fqn': 'Deployment/ABC', 'hash': 'e2e4634c5cd31a1b58da917e8b181b28', 'namespace': 'oc-project'}
+            ], state_update.stdin)
 
     def test_duplicate_kinds(self):
         self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '', error=Exception('NotFound'))
@@ -144,12 +144,49 @@ class StateTrackingTest(TestCase):
         os.environ['OCTOPLOY_KEY'] = TestUtils.OCTOPLOY_KEY
         octoploy.octoploy._run_apps_deploy('app_deploy_test', self._mode)
 
-        self.assertEqual(14, len(self._dummy_api.commands))
+        self.assertEqual(16, len(self._dummy_api.commands))
         self.assertEqual(['get', 'ConfigMap/octoploy-state', '-o', 'json'], self._dummy_api.commands[0].args)
 
         state_update = self._dummy_api.commands[-1]
         self.assertEqual(['apply', '-f', '-'], state_update.args)
         self.assertStateEqual([
+            {'context': 'ABC', 'fqn': 'ConfigMap/test-config', 'hash': '866c0e956381bbbd6c8b42abfd19895c', 'namespace': 'oc-project'},
+            {'context': 'ABC', 'fqn': 'Deployment/ABC', 'hash': 'e2e4634c5cd31a1b58da917e8b181b28', 'namespace': 'oc-project'},
+            {'context': 'entity-compare-api', 'fqn': 'Deployment/8080', 'hash': '644921ab79abf165d8fb8304913ff1c7', 'namespace': 'oc-project'},
+            {'context': 'favorite-api', 'fqn': 'Deployment/8081', 'hash': '3005876d55a8c9af38a58a4227a377fc', 'namespace': 'oc-project'},
+            {'context': 'cm-types', 'fqn': 'ConfigMap/config', 'hash': '1f4d778af0ea594402e656fd6139c584', 'namespace': 'oc-project'},
+            {'context': 'ABC2', 'fqn': 'Secret/secret', 'hash': 'd6e8e8f4b59b77117ec4ad267be8dcae', 'namespace': 'oc-project'},
+            {'context': 'var-append', 'fqn': 'ConfigMap/config', 'hash': '24d921e38f585e26cdc247d8fddc260e', 'namespace': 'oc-project'}
+        ], state_update.stdin)
+
+        # Now deploy a single app
+        current_state = yaml.safe_load(state_update.stdin)
+        self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], json.dumps(current_state))
+        self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
+        self._dummy_api.commands = []
+        octoploy.octoploy._run_app_deploy('app_deploy_test', 'app', self._mode)
+
+        self.assertEqual(5, len(self._dummy_api.commands))
+        state_update = self._dummy_api.commands[-1]
+        new_state = yaml.safe_load(state_update.stdin)
+        self.assertEqual(current_state, new_state)
+
+    def test_deploy_all_twice(self):
+        """
+        Deploys an entire folder twice and validates that the objects don't get removed again from k8s
+        """
+        self._dummy_api.not_found_by_default()
+
+        os.environ['OCTOPLOY_KEY'] = TestUtils.OCTOPLOY_KEY
+        octoploy.octoploy._run_apps_deploy('app_deploy_test', self._mode)
+
+        self.assertEqual(16, len(self._dummy_api.commands))
+        self.assertEqual(['get', 'ConfigMap/octoploy-state', '-o', 'json'], self._dummy_api.commands[0].args)
+
+        state_update = self._dummy_api.commands[-1]
+        self.assertEqual(['apply', '-f', '-'], state_update.args)
+        self.assertStateEqual([
+            {'context': 'ABC', 'fqn': 'ConfigMap/test-config', 'hash': '866c0e956381bbbd6c8b42abfd19895c', 'namespace': 'oc-project'},
             {"context": "ABC",
              "hash": "e2e4634c5cd31a1b58da917e8b181b28",
              "fqn": "Deployment/ABC",
@@ -175,58 +212,6 @@ class StateTrackingTest(TestCase):
              "fqn": "ConfigMap/config",
              "namespace": "oc-project"},
         ], state_update.stdin)
-
-        # Now deploy a single app
-        current_state = yaml.safe_load(state_update.stdin)
-        self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], json.dumps(current_state))
-        self._dummy_api.respond(['get', 'Deployment/ABC', '-o', 'json'], '{"kind": "", "apiVersion": ""}')
-        self._dummy_api.commands = []
-        octoploy.octoploy._run_app_deploy('app_deploy_test', 'app', self._mode)
-
-        self.assertEqual(3, len(self._dummy_api.commands))
-        state_update = self._dummy_api.commands[-1]
-        new_state = yaml.safe_load(state_update.stdin)
-        self.assertEqual(current_state, new_state)
-
-    def test_deploy_all_twice(self):
-        """
-        Deploys an entire folder twice and validates that the objects don't get removed again from k8s
-        """
-        self._dummy_api.not_found_by_default()
-
-        os.environ['OCTOPLOY_KEY'] = TestUtils.OCTOPLOY_KEY
-        octoploy.octoploy._run_apps_deploy('app_deploy_test', self._mode)
-
-        self.assertEqual(14, len(self._dummy_api.commands))
-        self.assertEqual(['get', 'ConfigMap/octoploy-state', '-o', 'json'], self._dummy_api.commands[0].args)
-
-        state_update = self._dummy_api.commands[-1]
-        self.assertEqual(['apply', '-f', '-'], state_update.args)
-        self.assertStateEqual([{"context": "ABC",
-                                "hash": "e2e4634c5cd31a1b58da917e8b181b28",
-                                "fqn": "Deployment/ABC",
-                                "namespace": "oc-project"},
-                               {"context": "entity-compare-api",
-                                "hash": "644921ab79abf165d8fb8304913ff1c7",
-                                "fqn": "Deployment/8080",
-                                "namespace": "oc-project"},
-                               {"context": "favorite-api",
-                                "hash": "3005876d55a8c9af38a58a4227a377fc",
-                                "fqn": "Deployment/8081",
-                                "namespace": "oc-project"},
-                               {"context": "cm-types",
-                                "hash": "1f4d778af0ea594402e656fd6139c584",
-                                "fqn": "ConfigMap/config",
-                                "namespace": "oc-project"},
-                               {"context": "ABC2",
-                                "hash": "d6e8e8f4b59b77117ec4ad267be8dcae",
-                                "fqn": "Secret/secret",
-                                "namespace": "oc-project"},
-                               {"context": "var-append",
-                                "hash": "24d921e38f585e26cdc247d8fddc260e",
-                                "fqn": "ConfigMap/config",
-                                "namespace": "oc-project"},
-                               ], state_update.stdin)
         # Now deploy a single app
         current_state = yaml.safe_load(state_update.stdin)
         self._dummy_api.respond(['get', 'ConfigMap/octoploy-state', '-o', 'json'], json.dumps(current_state))
@@ -238,9 +223,12 @@ class StateTrackingTest(TestCase):
         self._dummy_api.commands = []
         octoploy.octoploy._run_apps_deploy('app_deploy_test', self._mode)
 
-        self.assertEqual(8, len(self._dummy_api.commands))
-        for x in range(7):
-            self.assertEqual('get', self._dummy_api.commands[x].args[0])
+        self.assertEqual(10, len(self._dummy_api.commands))
+        get_cmd = 0
+        for cmd in self._dummy_api.commands:
+            if cmd.args[0] == 'get':
+                get_cmd += 1
+        self.assertEqual(8, get_cmd)
 
         state_update = self._dummy_api.commands[-1]
         new_state = yaml.safe_load(state_update.stdin)
