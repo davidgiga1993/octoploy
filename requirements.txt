@@ -1,2 +1,2 @@
-pyyaml
-pycryptodome
+pyyaml==6.0.2
+pycryptodome==3.23.0

@@ -1,4 +1,5 @@
 applyTemplates: [ app-template-2 ]
+name: for-each-test
 vars:
   REMAPPED: hello
 

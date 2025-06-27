@@ -78,11 +78,16 @@ class AppConfig(BaseConfig):
         :raise MissingVar: Gets raised if the data inside forEach is not complete
         """
         instances = []
+        names = set()
         for instance_vars in self.data.get('forEach', []):
             assert isinstance(instance_vars, dict)
             app_name = instance_vars.get('APP_NAME')
             if app_name is None:
                 raise MissingVar('APP_NAME not defined in forEach for app ' + str(self.get_name()))
+
+            if app_name in names:
+                raise ValueError(f'APP_NAME {app_name} already defined in forEach')
+            names.add(app_name)
 
             config = AppConfig(self._config_root, None, instance_vars, self._root)
             # Inherit all parameters

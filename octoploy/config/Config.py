@@ -239,7 +239,6 @@ class RootConfig(BaseConfig):
         :return:
         """
         items = []
-        names = set()
         for dir_item in os.listdir(self._config_root):
             path = os.path.join(self._config_root, dir_item)
             if not os.path.isdir(path):
@@ -254,10 +253,9 @@ class RootConfig(BaseConfig):
             if app_config.is_template() or not app_config.enabled():
                 self.log.debug(f"Skipping {app_name} as it's disabled")
                 continue
+            if app_name is None:
+                raise ValueError(f'"name" not defined in {path}')
 
-            if app_name in names:
-                raise ValueError(f'The app name {app_name} has already been used')
-            names.add(app_name)
             items.append(app_config)
         for library in self._libraries:
             items.extend(library.load_app_configs())

@@ -49,9 +49,15 @@ class AppDeployRunnerFactory:
         :param root_app_config: App for which the instances should be created
         """
         runners = []
+        names = set()
         for app_config in root_app_config.get_for_each():
             runner = AppDeployRunner(self._root_config, app_config, mode=self._mode)
             runners.append(runner)
+
+            app_name = app_config.get_name()
+            if app_name in names:
+                raise ValueError(f'App name {app_name} already used')
+            names.add(app_name)
         return runners
 
 
